@@ -1,0 +1,190 @@
+import SymbolicEquivalence.UnionFind.ClassCount
+import Mathlib.Logic.Relation
+
+/-!
+# Merging a list of pairs
+
+`mergeAll uf lvs` merges each pair in the list `lvs` into `uf` and returns the pairs that
+were linked, i.e. that joined two different classes.
+
+* `mergeAll_equiv_iff`: in the new union-find, two keys are related exactly when they are
+  connected by a chain of steps, each an old `uf.Equiv` or a pair in `lvs`.
+* `mergeAll_equiv_iff_linked`: the same holds with `lvs` replaced by the linked pairs.
+  The pairs that were not linked do not add anything.
+* `mergeAll_numClasses_add_length_le`: if all pairs are in `L`, each linked pair removes at
+  least one class among `L`.
+-/
+
+namespace UfManager
+
+variable {α : Type*} [BEq α] [Hashable α]
+
+/-! ## The relation used to describe `mergeAll` -/
+
+section gen
+
+open Relation
+
+/-- `a` and `b` are related by `uf`, or `(a, b)` is one of the pairs. -/
+def Gen (uf : UfManager α) (lvs : List (α × α)) (a b : α) : Prop :=
+  uf.Equiv a b ∨ (a, b) ∈ lvs
+
+/-- Keys related by `uf` are related by the generated equivalence. -/
+private theorem gen_of_equiv {uf : UfManager α} {lvs : List (α × α)} {a b : α}
+    (h : uf.Equiv a b) : EqvGen (Gen uf lvs) a b :=
+  EqvGen.rel _ _ (Or.inl h)
+
+/-- Every pair in the list is related by the generated equivalence. -/
+private theorem gen_of_mem {uf : UfManager α} {lvs : List (α × α)} {a b : α}
+    (h : (a, b) ∈ lvs) : EqvGen (Gen uf lvs) a b :=
+  EqvGen.rel _ _ (Or.inr h)
+
+/-- With no pairs, the generated equivalence is `uf.Equiv` itself. -/
+private theorem gen_nil (uf : UfManager α) (x y : α) :
+    EqvGen (Gen uf []) x y ↔ uf.Equiv x y := by
+  have hgen : Gen uf [] = uf.Equiv := by funext a b; simp [Gen]
+  rw [hgen, (UfManager.Equiv.isEquivalence uf).eqvGen_iff]
+
+end gen
+
+variable [LawfulBEq α]
+
+/-- Merge every pair in `lvs`, returning the new manager and the pairs that were
+    linked. Pairs that were already related are dropped. -/
+def mergeAll (uf : UfManager α) (lvs : List (α × α)) :
+    UfManager α × List (α × α) :=
+  match lvs with
+  | [] => (uf, [])
+  | l :: lvs' =>
+    let ⟨uf', merged⟩ := uf.merge l.1 l.2
+    let ⟨uf'', linked⟩ := mergeAll uf' lvs'
+    (uf'', if merged then l :: linked else linked)
+
+@[simp] theorem mergeAll_nil (uf : UfManager α) :
+    mergeAll uf ([] : List (α × α)) = (uf, []) := rfl
+
+@[simp] theorem mergeAll_cons_fst (l : α × α) (lvs : List (α × α)) (uf : UfManager α) :
+    (mergeAll uf (l :: lvs)).1 = (mergeAll (uf.merge l.1 l.2).1 lvs).1 := rfl
+
+private theorem mergeAll_cons_snd (l : α × α) (lvs : List (α × α)) (uf : UfManager α) :
+    (mergeAll uf (l :: lvs)).2 =
+      if (uf.merge l.1 l.2).2 then l :: (mergeAll (uf.merge l.1 l.2).1 lvs).2
+      else (mergeAll (uf.merge l.1 l.2).1 lvs).2 := rfl
+
+/-! ## What `mergeAll` computes -/
+
+section spec
+
+open Relation
+
+/-- Merging `l` first is the same as keeping it in the list. -/
+private theorem gen_merge_cons (uf : UfManager α) (l : α × α) (rest : List (α × α)) (x y : α) :
+    EqvGen (Gen (uf.merge l.1 l.2).1 rest) x y ↔ EqvGen (Gen uf (l :: rest)) x y := by
+  constructor
+  · -- Every step on the left is a chain of steps on the right
+    refine EqvGen.eqvGen_le ?_ x y
+    rintro a b (hrel | hmem)
+    · -- `a` and `b` are related after the merge, so by `merge_equiv_iff` they were related
+      -- before or are connected through the new link `l`
+      have hl : EqvGen (Gen uf (l :: rest)) l.1 l.2 := gen_of_mem List.mem_cons_self
+      rcases UfManager.merge_equiv_iff.mp hrel with h | ⟨ha, hb⟩ | ⟨ha, hb⟩
+      · exact gen_of_equiv h
+      · -- From `a` to `l.1`, across `l`, then from `l.2` to `b`
+        exact ((gen_of_equiv ha).trans _ _ _ hl).trans _ _ _ (gen_of_equiv hb)
+      · -- From `a` to `l.2`, back across `l`, then from `l.1` to `b`
+        exact ((gen_of_equiv ha).trans _ _ _ (hl.symm _ _)).trans _ _ _ (gen_of_equiv hb)
+    · -- A pair in `rest` is also in `l :: rest`
+      exact gen_of_mem (List.mem_cons_of_mem _ hmem)
+  · -- Every step on the right is a single step on the left
+    refine EqvGen.eqvGen_le ?_ x y
+    rintro a b (hrel | hmem)
+    · -- The merge keeps everything that was related
+      exact gen_of_equiv (UfManager.merge_equiv_of_equiv hrel)
+    · rcases List.mem_cons.mp hmem with heq | hmem
+      · -- The pair is `l`, which the merge relates
+        subst heq
+        exact gen_of_equiv UfManager.merge_equiv_self
+      · exact gen_of_mem hmem
+
+/-- If merging `l` did not link, `l` adds nothing. -/
+private theorem gen_merge_of_false {uf : UfManager α} {l : α × α}
+    (hb : (uf.merge l.1 l.2).2 = false) (rest : List (α × α)) (x y : α) :
+    EqvGen (Gen (uf.merge l.1 l.2).1 rest) x y ↔ EqvGen (Gen uf rest) x y := by
+  have hgen : Gen (uf.merge l.1 l.2).1 rest = Gen uf rest := by
+    funext a b; simp [Gen, UfManager.equiv_merge_iff_of_eq_false hb]
+  rw [hgen]
+
+/-! ### The union-find component -/
+
+/-- After `mergeAll`, `Equiv` is the equivalence generated by the old `Equiv` and the pairs. -/
+theorem mergeAll_equiv_iff (uf : UfManager α) (lvs : List (α × α)) (x y : α) :
+    (mergeAll uf lvs).1.Equiv x y ↔ EqvGen (Gen uf lvs) x y := by
+  induction lvs generalizing uf with
+  | nil => rw [mergeAll_nil]; exact (gen_nil uf x y).symm
+  | cons l lvs ih => rw [mergeAll_cons_fst, ih]; exact gen_merge_cons uf l lvs x y
+
+/-- Keys related before `mergeAll` stay related after it. -/
+theorem mergeAll_preserves_equiv {uf : UfManager α} {x y : α}
+    (lvs : List (α × α)) (h : uf.Equiv x y) :
+    (mergeAll uf lvs).1.Equiv x y :=
+  (mergeAll_equiv_iff uf lvs x y).mpr (gen_of_equiv h)
+
+/-- Every pair in `lvs` is related after `mergeAll`. -/
+theorem mergeAll_establishes_all_pairs {lvs : List (α × α)} (uf : UfManager α) :
+    ∀ l ∈ lvs, (mergeAll uf lvs).1.Equiv l.1 l.2 := fun l hl =>
+    (mergeAll_equiv_iff uf lvs l.1 l.2).mpr (gen_of_mem (by simpa using hl))
+
+/-! ### The linked pairs -/
+
+/-- After `mergeAll`, `Equiv` is generated by the old `Equiv` and the linked pairs alone. -/
+theorem mergeAll_equiv_iff_linked (uf : UfManager α) (lvs : List (α × α)) (x y : α) :
+    (mergeAll uf lvs).1.Equiv x y ↔ EqvGen (Gen uf (mergeAll uf lvs).2) x y := by
+  induction lvs generalizing uf with
+  | nil => rw [mergeAll_nil]; exact (gen_nil uf x y).symm
+  | cons l lvs ih =>
+    rw [mergeAll_cons_fst, mergeAll_cons_snd, ih]
+    cases hb : (uf.merge l.1 l.2).2 with
+    | true => simpa only [ite_true] using gen_merge_cons uf l _ x y
+    | false => simpa only [Bool.false_eq_true, ite_false] using gen_merge_of_false hb _ x y
+
+/-- The linked pairs are a sublist of the given pairs, not just a subset. -/
+theorem mergeAll_linked_sublist (uf : UfManager α) (lvs : List (α × α)) :
+    List.Sublist (mergeAll uf lvs).2 lvs := by
+  induction lvs generalizing uf with
+  | nil => simp
+  | cons l lvs ih =>
+    rw [mergeAll_cons_snd]
+    cases (uf.merge l.1 l.2).2 with
+    | false => exact (ih _).cons _
+    | true => exact (ih _).cons_cons _
+
+end spec
+
+/-! ## Termination -/
+
+section metric
+
+/-- If both keys of every pair are in `L`, each linked pair removes at least one class among `L`. -/
+theorem mergeAll_numClasses_add_length_le {L : Finset α} {lvs : List (α × α)}
+    (hin : ∀ l ∈ lvs, l.1 ∈ L ∧ l.2 ∈ L) (uf : UfManager α) :
+    (mergeAll uf lvs).1.numClasses L + (mergeAll uf lvs).2.length ≤ uf.numClasses L := by
+  induction lvs generalizing uf with
+  | nil => simp
+  | cons l lvs ih =>
+    have hrest := ih (fun l' hl' => hin l' (List.mem_cons_of_mem _ hl')) (uf.merge l.1 l.2).1
+    rw [mergeAll_cons_fst, mergeAll_cons_snd]
+    cases hb : (uf.merge l.1 l.2).2 with
+    | false =>
+      -- Nothing is linked, so the class count is unchanged and no pair is added
+      rw [UfManager.numClasses_merge_eq (L := L) hb] at hrest
+      simpa using hrest
+    | true =>
+      -- The merge removes a class, which covers the pair linked here
+      have hl := hin l List.mem_cons_self
+      have hlt := UfManager.numClasses_merge_lt (L := L) hl.1 hl.2 hb
+      simp only [ite_true, List.length_cons]
+      omega
+
+end metric
+
+end UfManager
