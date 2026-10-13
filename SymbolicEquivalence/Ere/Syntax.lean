@@ -9,6 +9,7 @@ inductive Ere (α : Type u) where
   | concatenation     : Ere α → Ere α → Ere α
   | star              : Ere α → Ere α
   | negation          : Ere α → Ere α
+  | xor               : Ere α → Ere α → Ere α
   deriving Repr, Ord, DecidableEq, Hashable
 
 namespace Ere

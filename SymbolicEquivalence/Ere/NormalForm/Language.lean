@@ -30,6 +30,10 @@ theorem lang_star (s : EreNorm α) : (s★ₙ).lang = ((s.lang : Language σ))�
 theorem lang_neg (s : EreNorm α) : (~ₙ s).lang = ((s.lang : Language σ))ᶜ := by
   simp only [EreNorm.lang, reconvert_neg, Ere.lang]
 
+theorem lang_xor (s t : EreNorm α) :
+    (EreNorm.xor s t).lang = symmDiff (s.lang : Language σ) t.lang := by
+  simp only [EreNorm.lang, reconvert_xor, Ere.lang]
+
 /-! ## Languages of the smart constructors -/
 
 section SmartConstructors
@@ -98,6 +102,7 @@ theorem lang_normalise (r : Ere α) : (normalise r).lang = (r.lang : Language σ
     rfl
   | star r ih => simp only [normalise, lang_star, ih, Ere.lang]
   | negation r ih => simp only [normalise, lang_neg, ih, Ere.lang]
+  | xor l r ihl ihr => simp only [normalise, lang_xor, ihl, ihr, Ere.lang]
 
 /-- The pointwise form of `lang_normalise`. -/
 theorem matches_normalise (r : Ere α) (xs : List σ) :

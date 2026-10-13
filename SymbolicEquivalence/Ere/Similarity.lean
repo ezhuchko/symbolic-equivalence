@@ -25,6 +25,7 @@ inductive Sim : Ere α → Ere α → Prop where
   | inter_cong : Sim R₁ R₂ → Sim S₁ S₂ → Sim (R₁ ⋒ S₁) (R₂ ⋒ S₂)
   | cat_cong   : Sim R₁ R₂ → Sim S₁ S₂ → Sim (R₁ ⬝ S₁) (R₂ ⬝ S₂)
   | star_cong  : Sim R₁ R₂ → Sim (R₁★) (R₂★)
+  | xor_cong   : Sim R₁ R₂ → Sim S₁ S₂ → Sim (.xor R₁ S₁) (.xor R₂ S₂)
 scoped infix:37 " ≅ " => Sim
 end Ere
 open Ere.Sim

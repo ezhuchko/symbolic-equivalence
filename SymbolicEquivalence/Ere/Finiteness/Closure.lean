@@ -73,6 +73,13 @@ theorem step_to_pieces {f e : Ere α} (e_in : e ∈ step f) :
     obtain ⟨a, ha, rfl⟩ := e_in
     obtain ⟨xs, hx, xs_in⟩ := ih ha
     exact ⟨[_], neg_cong hx, neSubsets_singleton (mem_map_subsetUnions xs_in)⟩
+  | xor l r ihl ihr =>
+    simp only [step, derivative, leaves_binary, mem_productWith] at e_in
+    obtain ⟨a, ha, b, hb, rfl⟩ := e_in
+    obtain ⟨xs, hx, xs_in⟩ := ihl ha
+    obtain ⟨ys, hy, ys_in⟩ := ihr hb
+    exact ⟨[_], xor_cong hx hy, neSubsets_singleton <| mem_productWith.mpr
+      ⟨_, mem_subsetUnions xs_in, _, mem_subsetUnions ys_in, rfl⟩⟩
 
 theorem step_to_subsetUnions {r : Ere α} :
   step r ⊆[ (· ≅ ·) ] ⊕(pieces r) := fun _ in_step =>

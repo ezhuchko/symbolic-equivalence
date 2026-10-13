@@ -24,6 +24,7 @@ inductive EreNorm (α : Type*) where
   | concatenation      : EreNorm α → EreNorm α → EreNorm α
   | star               : EreNorm α → EreNorm α
   | negation           : EreNorm α → EreNorm α
+  | xor                : EreNorm α → EreNorm α → EreNorm α
   deriving Repr, Hashable
 
 open EreNorm
@@ -128,6 +129,7 @@ inductive WellFormed {α : Type*} : EreNorm α → Prop where
   | concatenation (hl : WellFormed l) (hr : WellFormed r) : WellFormed (l ⬝ₙ r)
   | star (h : WellFormed r) : WellFormed (r★ₙ)
   | negation (h : WellFormed r) : WellFormed (~ₙ r)
+  | xor (hl : WellFormed l) (hr : WellFormed r) : WellFormed (.xor l r)
 
 /-! ### `WellFormed`, read off `toList` -/
 
@@ -182,6 +184,7 @@ mutual
     | a ⬝ₙ b, c ⬝ₙ d => EreNorm.beq a c && EreNorm.beq b d
     | a★ₙ, b★ₙ => EreNorm.beq a b
     | ~ₙ a, ~ₙ b => EreNorm.beq a b
+    | .xor a b, .xor c d => EreNorm.beq a c && EreNorm.beq b d
     | _, _ => false
 
   def EreNorm.beqList [BEq α] : List (EreNorm α) → List (EreNorm α) → Bool
@@ -198,7 +201,7 @@ mutual
     | .pred p => by simp [EreNorm.beq]
     | ⋃ₙ[x, y | zs] => by
       simp [EreNorm.beq, lawful_rfl x, lawful_rfl y, lawful_rfl_list zs]
-    | l ⋒ₙ r | l ⬝ₙ r => by simp [EreNorm.beq, lawful_rfl l, lawful_rfl r]
+    | l ⋒ₙ r | l ⬝ₙ r | .xor l r => by simp [EreNorm.beq, lawful_rfl l, lawful_rfl r]
     | r★ₙ | ~ₙ r => by simp [EreNorm.beq, lawful_rfl r]
 
   theorem EreNorm.lawful_rfl_list [BEq α] [LawfulBEq α] :
@@ -215,7 +218,7 @@ mutual
     | ⋃ₙ[x, y | zs], b, h => by
       cases b <;> simp only [EreNorm.beq, Bool.and_eq_true, reduceCtorEq] at h
       rw [lawful_eq_of_beq h.1.1, lawful_eq_of_beq h.1.2, lawful_eq_of_beq_list h.2]
-    | _ ⋒ₙ _, b, h | _ ⬝ₙ _, b, h => by
+    | _ ⋒ₙ _, b, h | _ ⬝ₙ _, b, h | .xor _ _, b, h => by
       cases b <;> simp only [EreNorm.beq, Bool.and_eq_true, reduceCtorEq] at h
       rw [lawful_eq_of_beq h.1, lawful_eq_of_beq h.2]
     | _★ₙ, b, h | ~ₙ _, b, h => by

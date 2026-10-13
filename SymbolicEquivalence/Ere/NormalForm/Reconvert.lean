@@ -25,6 +25,7 @@ def reconvert : EreNorm α → Ere α
   | l ⬝ₙ r => reconvert l ⬝ reconvert r
   | r★ₙ    => (reconvert r)★
   | ~ₙ r   => ~ (reconvert r)
+  | .xor l r => .xor (reconvert l) (reconvert r)
 
 @[simp] theorem reconvert_ε : reconvert (ε : EreNorm α) = .ε := by rw [reconvert]
 @[simp] theorem reconvert_pred (p : α) : reconvert (.pred p) = .pred p := by rw [reconvert]
@@ -38,6 +39,8 @@ def reconvert : EreNorm α → Ere α
 @[simp] theorem reconvert_star (r : EreNorm α) :
   reconvert r★ₙ = (reconvert r)★ := by rw [reconvert]
 @[simp] theorem reconvert_neg (r : EreNorm α) : reconvert ~ₙr = ~ (reconvert r) := by rw [reconvert]
+@[simp] theorem reconvert_xor (l r : EreNorm α) :
+  reconvert (.xor l r) = .xor (reconvert l) (reconvert r) := by rw [reconvert]
 
 /-- `reconvert` maps `fromList` to `unionOf`. -/
 @[simp] theorem reconvert_fromList (x : EreNorm α) (xs : List (EreNorm α)) :

@@ -29,6 +29,7 @@ def nullable : EreNorm α → Bool
   | l ⬝ₙ r => nullable l && nullable r
   | _★ₙ => true
   | ~ₙ r => !nullable r
+  | .xor l r => nullable l != nullable r
 termination_by r => sizeOf r
 
 /-- Nullability of an operand list given as its first element and the rest. -/
@@ -66,7 +67,7 @@ theorem nullable_reconvert (r : EreNorm α) :
     rw [nullable, reconvert_union, List.map_cons,
       unionOf_cons _ (by simp), nullable_reconvert x, nullableUnion_reconvert y zs]
     simp [Ere.nullable]
-  | l ⋒ₙ r | l ⬝ₙ r =>
+  | l ⋒ₙ r | l ⬝ₙ r | .xor l r =>
     simp [nullable, nullable_reconvert l, nullable_reconvert r, Ere.nullable]
   | r★ₙ => simp [nullable, Ere.nullable]
   | ~ₙ r => simp [nullable, nullable_reconvert r, Ere.nullable]
@@ -157,6 +158,7 @@ def derivative : EreNorm α → TTerm α (EreNorm α)
       liftUnary (mkCat · r) (derivative l)
   | r★ₙ => liftUnary (mkCat · r★ₙ) (derivative r)
   | ~ₙ r => liftUnary (~ₙ ·) (derivative r)
+  | .xor l r => liftBinary .xor (derivative l) (derivative r)
 termination_by r => sizeOf r
 
 /-- Derivative of an operand list, folded with `mkUnion`. -/
@@ -209,6 +211,9 @@ theorem derivative_eval_wf {r : EreNorm α} (h : WellFormed r) (a : σ) :
   | ~ₙ r, .negation hr =>
     simp only [derivative, eval_liftUnary]
     exact .negation (derivative_eval_wf hr a)
+  | .xor l r, .xor hl hr =>
+    simp only [derivative, eval_liftBinary]
+    exact .xor (derivative_eval_wf hl a) (derivative_eval_wf hr a)
 termination_by sizeOf r
 
 theorem derivativeUnion_eval_wf {x : EreNorm α} {xs : List (EreNorm α)}
@@ -316,6 +321,7 @@ theorem derivative_normalise (y : Ere α) (c : σ) :
       simp only [eval_liftUnary, normalise, ihl]
   | star r ih => simp only [normalise, derivative, Ere.derivative, eval_liftUnary, ih]
   | negation r ih => simp only [normalise, derivative, Ere.derivative, eval_liftUnary, ih]
+  | xor l r ihl ihr => simp only [normalise, derivative, Ere.derivative, eval_liftBinary, ihl, ihr]
 
 /-- Derivatives of an output of `normalise` are again outputs of `normalise`. -/
 theorem IsNormal.derivative {s : EreNorm α} (h : IsNormal s) (c : σ) :

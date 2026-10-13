@@ -19,6 +19,7 @@ def Ere.nullable : Ere α → Bool
   | l ⬝ r      => nullable l && nullable r
   | _★         => true
   | ~ r        => !nullable r
+  | .xor l r   => nullable l != nullable r
 
 /-- The symbolic derivative of `r`, a transition term that evaluates at any character `c` to
     the derivative of `r` by `c`. -/
@@ -35,6 +36,7 @@ def Ere.derivative : Ere α → TTerm α (Ere α)
       liftUnary (· ⬝ r) (derivative l)
   | r★  => liftUnary (· ⬝ r★) (derivative r)
   | ~ r => liftUnary (~ ·) (derivative r)
+  | .xor l r => liftBinary .xor (derivative l) (derivative r)
 namespace Ere
 scoped prefix:max " ρ " => Ere.derivative
 end Ere
@@ -50,6 +52,7 @@ def Ere.der (r : Ere α) (x : σ) : Ere α :=
   | l ⋒ r  => der l x ⋒ der r x
   | r★     => der r x ⬝ r★
   | ~ r    => ~(der r x)
+  | .xor l r => .xor (der l x) (der r x)
   | l ⬝ r  =>
     if nullable l then
       (der l x ⬝ r) ⋓ der r x
@@ -70,13 +73,17 @@ theorem Ere.der_eq_eval_derivative (r : Ere α) (x : σ) :
     simp only [der]
     simp only [der_eq_eval_derivative l x, der_eq_eval_derivative r x, derivative]
     exact Eq.symm (eval_liftBinary intersection (derivative l) (derivative r) x)
+  | .xor l r => by
+    simp only [der]
+    simp only [der_eq_eval_derivative l x, der_eq_eval_derivative r x, derivative]
+    exact Eq.symm (eval_liftBinary Ere.xor (derivative l) (derivative r) x)
   | r★   => by
     simp only [der, derivative]
-    rw[der_eq_eval_derivative r x]
+    rw [der_eq_eval_derivative r x]
     exact Eq.symm (eval_liftUnary (· ⬝ r★) (derivative r) x)
   | ~ r  => by
     simp only [der, derivative]
-    rw[der_eq_eval_derivative r x]
+    rw [der_eq_eval_derivative r x]
     exact Eq.symm (eval_liftUnary negation (derivative r) x)
   | l ⬝ r => by
     unfold der
@@ -85,7 +92,7 @@ theorem Ere.der_eq_eval_derivative (r : Ere α) (x : σ) :
       simp [der_eq_eval_derivative l x, der_eq_eval_derivative r x]
     · simp only [derivative, h]
       simp only [Bool.false_eq_true, ↓reduceIte]
-      rw[der_eq_eval_derivative l x]
+      rw [der_eq_eval_derivative l x]
       exact (eval_liftUnary (· ⬝ r) (derivative l) x).symm
 
 end Derivative
@@ -107,6 +114,9 @@ theorem nil_matches_iff_nullable {r : Ere α} : ([] : List σ) ⊫ r ↔ nullabl
   | l ⬝ r => by simp [nil_matches_iff_nullable (r := l), nil_matches_iff_nullable (r := r)]
   | r★ => by simpa using ⟨0, rfl⟩
   | ~ r => by simp [nil_matches_iff_nullable (r := r)]
+  | .xor l r => by
+    simp [nil_matches_iff_nullable (r := l), nil_matches_iff_nullable (r := r)]
+    cases l.nullable <;> cases r.nullable <;> simp
 
 /-- A nonempty word matches `l ⬝ r` iff its head is consumed by `l`, or `l` is skipped. -/
 theorem cons_matches_cat {a : σ} {xs : List σ} {l r : Ere α} :
@@ -145,6 +155,7 @@ theorem cons_matches_iff {r : Ere α} {a : σ} {xs : List σ} : a :: xs ⊫ r �
   | l ⋓ r => by simp [cons_matches_iff (r := l), cons_matches_iff (r := r)]
   | l ⋒ r => by simp [cons_matches_iff (r := l), cons_matches_iff (r := r)]
   | ~ r => by simp [cons_matches_iff (r := r)]
+  | .xor l r => by simp [cons_matches_iff (r := l), cons_matches_iff (r := r)]
   | r★ => by rw [cons_matches_star]; simp [cons_matches_iff (r := r)]
   | l ⬝ r => by
     rw [cons_matches_cat]

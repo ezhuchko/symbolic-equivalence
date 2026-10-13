@@ -23,6 +23,7 @@ def lang : Ere α → Language σ
   | l ⬝ r => lang l * lang r
   | r★ => (lang r)∗
   | ~ r => (lang r)ᶜ
+  | .xor l r => symmDiff (lang l) (lang r)
 
 /-- `xs ⊫ r` holds exactly when `xs` is in the language of `r`. -/
 def Matches (xs : List σ) (r : Ere α) : Prop := xs ∈ r.lang
@@ -50,6 +51,11 @@ scoped notation:52 lhs:53 " ⊫ " rhs:53 => Ere.Matches lhs rhs
   · rintro ⟨a, b, ha, hb, rfl⟩; exact ⟨a, ha, b, hb, rfl⟩
 
 @[simp] theorem matches_neg {xs : List σ} {r : Ere α} : (xs ⊫ ~r) ↔ ¬ (xs ⊫ r) := Iff.rfl
+
+@[simp] theorem matches_xor {xs : List σ} {l r : Ere α} :
+    (xs ⊫ .xor l r) ↔ ((xs ⊫ l) ↔ ¬ (xs ⊫ r)) := by
+  exact (Set.mem_symmDiff (s := (l.lang : Set (List σ))) (t := r.lang)).trans
+    (by simp only [Matches]; tauto)
 
 /-- The language of a bounded repetition is the corresponding power. -/
 theorem lang_repeatCat (r : Ere α) (n : ℕ) : (r⁽n⁾).lang = (r.lang : Language σ) ^ n := by
@@ -80,7 +86,8 @@ theorem sim_lang_eq {p q : Ere α} (h : p ≅ q) : (p.lang : Language σ) = q.la
   | idem | assoc | dedup => ext x; simp only [Ere.lang, Language.mem_add]; tauto
   | symm _ ih => exact ih.symm
   | trans _ _ ih1 ih2 => exact ih1.trans ih2
-  | union_cong _ _ ih1 ih2 | inter_cong _ _ ih1 ih2 | cat_cong _ _ ih1 ih2 =>
+  | union_cong _ _ ih1 ih2 | inter_cong _ _ ih1 ih2 | cat_cong _ _ ih1 ih2
+  | xor_cong _ _ ih1 ih2 =>
     simp only [Ere.lang, ih1, ih2]
   | star_cong _ ih | neg_cong _ ih => simp only [Ere.lang, ih]
 

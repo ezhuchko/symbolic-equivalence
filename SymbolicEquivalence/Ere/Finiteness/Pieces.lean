@@ -25,6 +25,7 @@ def pieces : Ere α → List (Ere α)
   | l ⬝ r  => map (· ⬝ r) ⊕(pieces l) ++ pieces r
   | r★    => r★ :: map (· ⬝ r★) ⊕(pieces r)
   | ~ r   => map (~ ·) ⊕(pieces r)
+  | .xor l r => productWith .xor ⊕(pieces l) ⊕(pieces r)
 
 end Ere
 
@@ -45,6 +46,12 @@ theorem pieces_refl {r : Ere α} :
     ⟨[unionOf xs ⋒ unionOf ys],
      neSubsets_singleton (mem_productWith.mpr ⟨unionOf xs, mem_subsetUnions xs_in,
                              unionOf ys, mem_subsetUnions ys_in, rfl⟩), inter_cong hx hy⟩
+  | .xor l r  =>
+    have ⟨xs, xs_in, hx⟩ := pieces_refl (r := l)
+    have ⟨ys, ys_in, hy⟩ := pieces_refl (r := r)
+    ⟨[.xor (unionOf xs) (unionOf ys)],
+     neSubsets_singleton (mem_productWith.mpr ⟨unionOf xs, mem_subsetUnions xs_in,
+                             unionOf ys, mem_subsetUnions ys_in, rfl⟩), xor_cong hx hy⟩
   | r★   => ⟨[r★], neSubsets_singleton mem_cons_self, refl⟩
   | ~ r       =>
     have ⟨xs, xs_in, hx⟩ := pieces_refl (r := r)
@@ -95,6 +102,15 @@ theorem pieces_inter_mono
   obtain ⟨b', b'_mem, b'_sim⟩ := subsetUnions_monotone hr _ hb
   exact ⟨a' ⋒ b', mem_productWith.mpr ⟨a', a'_mem, b', b'_mem, rfl⟩, inter_cong a'_sim b'_sim⟩
 
+theorem pieces_xor_mono
+    (hl : pieces l₁ ⊆[ (· ≅ ·) ] pieces l₂) (hr : pieces r₁ ⊆[ (· ≅ ·) ] pieces r₂) :
+    pieces (.xor l₁ r₁) ⊆[ (· ≅ ·) ] pieces (.xor l₂ r₂) := by
+  intro e he
+  obtain ⟨a, ha, b, hb, rfl⟩ := mem_productWith.mp he
+  obtain ⟨a', a'_mem, a'_sim⟩ := subsetUnions_monotone hl _ ha
+  obtain ⟨b', b'_mem, b'_sim⟩ := subsetUnions_monotone hr _ hb
+  exact ⟨.xor a' b', mem_productWith.mpr ⟨a', a'_mem, b', b'_mem, rfl⟩, xor_cong a'_sim b'_sim⟩
+
 theorem pieces_cat_mono
     (hl : pieces l₁ ⊆[ (· ≅ ·) ] pieces l₂) (hr : pieces r₁ ⊆[ (· ≅ ·) ] pieces r₂)
     (hsim : r₁ ≅ r₂) :
@@ -143,6 +159,7 @@ theorem pieces_equiv {f f' : Ere α} (eqv : f ≅ f') :
     exact ⟨pieces_cat_mono ih1.1 ih2.1 g, pieces_cat_mono ih1.2 ih2.2 (symm g)⟩
   | star_cong h ih         => exact ⟨pieces_star_mono ih.1 h, pieces_star_mono ih.2 (symm h)⟩
   | neg_cong _ ih          => exact ⟨pieces_neg_mono ih.1, pieces_neg_mono ih.2⟩
+  | xor_cong _ _ ih1 ih2   => exact ⟨pieces_xor_mono ih1.1 ih2.1, pieces_xor_mono ih1.2 ih2.2⟩
 
 /-- A piece of a union is a piece of one of the operands. -/
 theorem pieces_unionOf {e : Ere α} {xs : List (Ere α)} (ne : xs ≠ [])
@@ -194,6 +211,15 @@ theorem pieces_trans {e : Ere α}
       subsetUnions_pieces_step (fun hy hx => pieces_trans hx hy) hb hd
     exact ⟨c' ⋒ d', mem_productWith.mpr ⟨c', c'_mem, d', d'_mem, rfl⟩,
            inter_cong c'_sim d'_sim⟩
+  | .xor l r =>
+    obtain ⟨a, ha, b, hb, rfl⟩ := mem_productWith.mp h2
+    obtain ⟨c, hc, d, hd, rfl⟩ := mem_productWith.mp h1
+    obtain ⟨c', c'_mem, c'_sim⟩ :=
+      subsetUnions_pieces_step (fun hy hx => pieces_trans hx hy) ha hc
+    obtain ⟨d', d'_mem, d'_sim⟩ :=
+      subsetUnions_pieces_step (fun hy hx => pieces_trans hx hy) hb hd
+    exact ⟨.xor c' d', mem_productWith.mpr ⟨c', c'_mem, d', d'_mem, rfl⟩,
+           xor_cong c'_sim d'_sim⟩
   | l ⬝ r =>
     simp only [pieces, mem_append, mem_map] at h2
     rcases h2 with ⟨a, ha, rfl⟩ | g

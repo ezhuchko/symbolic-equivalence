@@ -24,6 +24,7 @@ def normalise (r : Ere α) : EreNorm α :=
   | l ⬝ r   => mkCat (normalise l) (normalise r)
   | r★     => (normalise r)★ₙ
   | ~ r     => ~ₙ (normalise r)
+  | .xor l r => .xor (normalise l) (normalise r)
 
 theorem wellFormed_of_normalise (r : Ere α) : WellFormed (normalise r) :=
   match r with
@@ -36,6 +37,7 @@ theorem wellFormed_of_normalise (r : Ere α) : WellFormed (normalise r) :=
     wellFormed_mkCat (wellFormed_of_normalise l) (wellFormed_of_normalise r)
   | r★ => .star (wellFormed_of_normalise r)
   | ~ r => .negation (wellFormed_of_normalise r)
+  | .xor l r => .xor (wellFormed_of_normalise l) (wellFormed_of_normalise r)
 
 /-- `normalise` maps similar expressions to the same normal form. -/
 theorem normalise_correctness {a b : Ere α} (h : a ≅ b) :
