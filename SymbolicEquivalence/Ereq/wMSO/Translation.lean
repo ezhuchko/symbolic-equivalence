@@ -177,5 +177,5 @@ theorem Formula.size_toEreq (φ : Formula α n) : ⌜φ⌝.size ≤ 13 * φ.size
   induction φ with
   | or φ ψ ihφ ihψ | and φ ψ ihφ ihψ =>
     simp only [Formula.toEreq, Ereq.size, Formula.size]; omega
-  | not φ ih | .exists₂ φ ih => simp only [Formula.toEreq, Ereq.size, Formula.size]; omega
+  | not φ ih | exists₂ φ ih => simp only [Formula.toEreq, Ereq.size, Formula.size]; omega
   | lt | sub | pred | singleton => simp [Formula.toEreq, Ereq.size, Ereq.any, Formula.size]
