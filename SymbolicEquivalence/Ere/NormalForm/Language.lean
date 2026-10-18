@@ -106,6 +106,11 @@ theorem matches_normalise (r : Ere α) (xs : List σ) :
     xs ∈ (normalise r).lang ↔ (xs ⊫ r) :=
   Language.ext_iff.mp (lang_normalise r) xs
 
+/-- Expressions with the same normal form have the same language. -/
+theorem lang_eq_of_normalise_eq {r₁ r₂ : Ere α} (h : normalise r₁ = normalise r₂) :
+    (r₁.lang : Language σ) = r₂.lang := by
+  rw [← lang_normalise r₁, ← lang_normalise r₂, h]
+
 end SmartConstructors
 
 end EreNorm

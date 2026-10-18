@@ -113,6 +113,11 @@ theorem leaves_binary (op : β → γ → δ) (f : TTerm α β) (g : TTerm α γ
   simp only [leaves_map, productWith, Seq.seq]
   exact (List.flatMap_map op (fun y => List.map y (leaves g)) (leaves f)).symm
 
+/-- The binary lift multiplies the number of leaves. -/
+theorem length_leaves_binary (op : β → γ → δ) (f : TTerm α β) (g : TTerm α γ) :
+    (leaves (liftBinary op f g)).length = (leaves f).length * (leaves g).length := by
+  simp
+
 /-! ### Evaluation -/
 
 section Eval
@@ -269,6 +274,13 @@ def reachableLeaves (f : TTerm α β) (ψ : α) : List β :=
 
 theorem reachableLeaves_eq_leaves_restrict (f : TTerm α β) (ψ : α) (h : Satisfiable ψ) :
     reachableLeaves f ψ = leaves (f.restrict ψ) := ite_eq_left h
+
+/-- Every reachable leaf is a leaf. -/
+theorem reachableLeaves_subset (f : TTerm α β) (ψ : α) : reachableLeaves f ψ ⊆ leaves f := by
+  unfold reachableLeaves
+  split
+  · exact leaves_restrict_subset f ψ
+  · exact List.nil_subset _
 
 /-- Every leaf of `f.restrict ψ` is reached by some character satisfying `ψ`. -/
 private theorem mem_leaves_restrict_of {f : TTerm α β} {ψ : α} {x : β}
