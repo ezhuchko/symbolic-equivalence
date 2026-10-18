@@ -14,12 +14,12 @@ open scoped Ere
 
 variable {α : Type*}
 
-/-- Normal forms of `Ere`, in which an union is a single node with at least two
+/-- Normal forms of `Ere`, in which a union is a single node with at least two
     operands. -/
 inductive EreNorm (α : Type*) where
   | ε                  : EreNorm α
   | pred (e : α)       : EreNorm α
-  | union        : EreNorm α → EreNorm α → List (EreNorm α) → EreNorm α
+  | union              : EreNorm α → EreNorm α → List (EreNorm α) → EreNorm α
   | intersection       : EreNorm α → EreNorm α → EreNorm α
   | concatenation      : EreNorm α → EreNorm α → EreNorm α
   | star               : EreNorm α → EreNorm α
@@ -64,12 +64,12 @@ def EreNorm.unexpandUnion : Lean.PrettyPrinter.Unexpander
   | .union .. => true
   | _ => false
 
-/-- The first operand of an union, or the node itself for any other node. -/
+/-- The first operand of a union, or the node itself for any other node. -/
 @[simp] def EreNorm.first : EreNorm α → EreNorm α
   | ⋃ₙ[x, _ | _] => x
   | r => r
 
-/-- The remaining operands of an union, or `[]` for any other node. -/
+/-- The remaining operands of a union, or `[]` for any other node. -/
 @[simp] def EreNorm.rest : EreNorm α → List (EreNorm α)
   | ⋃ₙ[_, y | zs] => y :: zs
   | _ => []
@@ -80,7 +80,7 @@ namespace EreNorm
 def toList (r : EreNorm α) : List (EreNorm α) := r.first :: r.rest
 
 @[simp] theorem toList_union (x y : EreNorm α) (zs : List (EreNorm α)) :
-  toList ⋃ₙ[x, y | zs] = x :: y :: zs := rfl
+    toList ⋃ₙ[x, y | zs] = x :: y :: zs := rfl
 
 /-- A non-union is its own singleton operand list. -/
 theorem toList_eq_self {r : EreNorm α} (h : isUnion r = false) : toList r = [r] := by
@@ -93,13 +93,13 @@ def fromList : EreNorm α → List (EreNorm α) → EreNorm α
 
 @[simp] theorem fromList_nil (x : EreNorm α) : fromList x [] = x := rfl
 @[simp] theorem fromList_cons (x y : EreNorm α) (zs) :
-  fromList x (y :: zs) = ⋃ₙ[x, y | zs] := rfl
+    fromList x (y :: zs) = ⋃ₙ[x, y | zs] := rfl
 
 /-- `fromList` undoes `toList`. -/
 theorem fromList_toList (r : EreNorm α) : fromList r.first r.rest = r := by
   cases r <;> rfl
 
-/-- `toList` undoes `fromList` when the first operand is not an union. -/
+/-- `toList` undoes `fromList` when the first operand is not a union. -/
 theorem toList_fromList {x : EreNorm α} {xs : List (EreNorm α)} (h : isUnion x = false) :
     toList (fromList x xs) = x :: xs := by
   cases xs with
@@ -116,20 +116,22 @@ theorem eq_of_toList_eq {r s : EreNorm α} (h : toList r = toList s) : r = s := 
 
 /-! ### Well-formed normal forms -/
 
-/-- A normal form has no duplicate operands and no union directly inside an union,
+/-- A normal form has no duplicate operands and no union directly inside a union,
     which are exactly the hypotheses of the union laws in `SmartUnion`. -/
-inductive WellFormed {α : Type*} : EreNorm α → Prop where
+inductive WellFormed : EreNorm α → Prop where
   | ε : WellFormed ε
   | pred (e : α) : WellFormed (pred e)
-  | union {zs : List (EreNorm α)}
+  | union {x y : EreNorm α} {zs : List (EreNorm α)}
     (h : ∀ w ∈ x :: y :: zs, WellFormed w)
     (n : (x :: y :: zs).Nodup)
     (f : ∀ w ∈ x :: y :: zs, isUnion w = false) : WellFormed ⋃ₙ[x, y | zs]
-  | intersection (hl : WellFormed l) (hr : WellFormed r) : WellFormed (l ⋒ₙ r)
-  | concatenation (hl : WellFormed l) (hr : WellFormed r) : WellFormed (l ⬝ₙ r)
-  | star (h : WellFormed r) : WellFormed (r★ₙ)
-  | negation (h : WellFormed r) : WellFormed (~ₙ r)
-  | xor (hl : WellFormed l) (hr : WellFormed r) : WellFormed (.xor l r)
+  | intersection {l r : EreNorm α} (hl : WellFormed l) (hr : WellFormed r) :
+    WellFormed (l ⋒ₙ r)
+  | concatenation {l r : EreNorm α} (hl : WellFormed l) (hr : WellFormed r) :
+    WellFormed (l ⬝ₙ r)
+  | star {r : EreNorm α} (h : WellFormed r) : WellFormed (r★ₙ)
+  | negation {r : EreNorm α} (h : WellFormed r) : WellFormed (~ₙ r)
+  | xor {l r : EreNorm α} (hl : WellFormed l) (hr : WellFormed r) : WellFormed (.xor l r)
 
 /-! ### `WellFormed`, read off `toList` -/
 
@@ -152,7 +154,7 @@ theorem toList_not_isUnion {r : EreNorm α} (h : WellFormed r) :
 theorem toList_append_eq (A B : EreNorm α) :
     toList A ++ toList B = A.first :: (A.rest ++ toList B) := rfl
 
-/-- An element of two appended operand lists is well-formed and not an union. -/
+/-- An element of two appended operand lists is well-formed and not a union. -/
 theorem mem_toList_append {a b x : EreNorm α}
     (ha : WellFormed a) (hb : WellFormed b) (hx : x ∈ toList a ++ toList b) :
     WellFormed x ∧ isUnion x = false := by

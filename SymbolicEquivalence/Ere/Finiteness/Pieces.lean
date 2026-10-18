@@ -1,5 +1,5 @@
 import SymbolicEquivalence.Ere.UnionOf
-import SymbolicEquivalence.Ere.Derivative
+import SymbolicEquivalence.TransitionTerm
 
 /-!
 # Pieces
@@ -26,8 +26,6 @@ def pieces : Ere α → List (Ere α)
   | r★    => r★ :: map (· ⬝ r★) ⊕(pieces r)
   | ~ r   => map (~ ·) ⊕(pieces r)
   | .xor l r => productWith .xor ⊕(pieces l) ⊕(pieces r)
-
-end Ere
 
 theorem pieces_refl {r : Ere α} :
     ∃ xs, xs ∈ neSubsets (pieces r) ∧ unionOf xs ≅ r :=
@@ -186,7 +184,7 @@ theorem subsetUnions_pieces_step {ps : List (Ere α)} {a b : Ere α}
   exact ih (zs_ps pi_in) pi_piece
 
 /-- A piece of a piece of `g` is, up to `≅`, a piece of `g`. -/
-theorem pieces_trans {e : Ere α}
+theorem pieces_trans {e f g : Ere α}
     (h1 : e ∈ pieces f)
     (h2 : f ∈ pieces g) :
     e ∈[ (· ≅ ·) ] pieces g := by
@@ -256,7 +254,7 @@ theorem subsetUnions_pieces_refl {r : Ere α} : r ∈[ (· ≅ ·) ] ⊕(pieces 
   have ⟨xs, xs_in, xs_eqv⟩ := pieces_refl (r := r)
   ⟨unionOf xs, mem_subsetUnions xs_in, symm xs_eqv⟩
 
-theorem subsetUnions_pieces_trans {e : Ere α}
+theorem subsetUnions_pieces_trans {e f g : Ere α}
     (h1 : e ∈[ (· ≅ ·) ] ⊕(pieces f))
     (h2 : f ∈[ (· ≅ ·) ] ⊕(pieces g)) :
     e ∈[ (· ≅ ·) ] ⊕(pieces g) := by
@@ -272,6 +270,8 @@ theorem subsetUnions_pieces_trans {e : Ere α}
     have ⟨gi, gi_mem, i1_piece⟩ := pieces_unionOf ne_zs i1_mem
     have ⟨j1, j1_mem, i1_j1⟩ := pieces_trans i1_piece (zs_sub gi_mem)
     ⟨j1, j1_mem, trans x_i1 i1_j1⟩
-  -- a union over `pieces g` is `≅` a *nodup* such union, which is in `⊕(pieces g)`
+  -- so `unionOf as` is similar to a union of distinct pieces of `g`, which is in `⊕(pieces g)`
   obtain ⟨y, y_mem, sum_y⟩ := subset_sim_perm ne_as sub
   exact ⟨y, y_mem, trans e_ff sum_y⟩
+
+end Ere

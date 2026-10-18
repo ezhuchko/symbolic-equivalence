@@ -5,7 +5,7 @@ import Mathlib.Tactic.Tauto
 # Smart union (`⋓'`)
 
 `mkUnion` concatenates operand lists, deduplicates (keeping first occurrences) and
-rebuilds.  It satisfies the union laws of `≅` as equations:
+rebuilds. It satisfies the union laws of `≅` as equations:
 
   Idempotence:            `r ⋓' r = r`
   Right-deduplication:    `(r ⋓' s) ⋓' r = r ⋓' s`
@@ -39,7 +39,7 @@ variable [Bot α]
 
 /-- Smart union returns the other operand if one is `⊥` and merges the operand lists otherwise.
 
-    Dropping `⊥` simplifies more than `≅` allows. This is fine because it preserves the language,
+    Dropping `⊥` simplifies more than `≅` allows. This is safe, since it preserves the language,
     nullability, derivatives and well-formedness (`lang_mkUnion`, `nullable_mkUnion`,
     `derivative_mkUnion`, `wellFormed_mkUnion`). -/
 def mkUnion (A B : EreNorm α) : EreNorm α :=
@@ -135,7 +135,7 @@ theorem mkUnion_assoc {a b c : EreNorm α} (ha : WellFormed a) (hb : WellFormed 
 
 /-! ## The n-ary fold
 
-The derivative of an union is `unionAll` over the derivatives of its operands
+The derivative of a union is `unionAll` over the derivatives of its operands
 (`eval_derivative_toList`). Unlike `unionOf`, `unionAll` satisfies its laws up to `=`
 rather than `≅`. -/
 

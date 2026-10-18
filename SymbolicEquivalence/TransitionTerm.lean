@@ -4,17 +4,19 @@ import SymbolicEquivalence.EffectiveBooleanAlgebra
 # Transition terms
 
 A transition term `TTerm α β` is a binary decision tree whose internal nodes test
-predicates `α` and whose leaves carry values `β`.  Evaluating it on a character `x` follows
+predicates `α` and whose leaves carry values `β`. Evaluating it on a character `x` follows
 the branches `x` selects: the left one where `x` satisfies the node's predicate, the right
 one otherwise.
 
 * `TTerm α` is a lawful monad (`t >>= f` grafts the tree `f b` in place of every leaf `b`);
   `liftUnary` and `liftBinary` lift operations on leaves to trees.
 * `leaves`, `evaluation` (`f[x]`): the leaf list and the evaluation of a tree on a character.
-* `restrict`: pruning.  Given a guard `ψ`, it drops every branch that no character
-  satisfying `ψ` reaches, using a satisfiability oracle (`DecidableSat`).
+* `restrict`, `bindR`, `liftBinaryR`: pruning. Given a guard `ψ`, they drop every branch
+  that no character satisfying `ψ` reaches, using a satisfiability oracle (`DecidableSat`).
+  `restrict` prunes a tree, `bindR` is the pruned `>>=` and `liftBinaryR` is the pruned
+  `liftBinary` (with `ψ = ⊤`).
 * `reachableLeaves`: the leaves that some character satisfying a guard `ψ` reaches
-   (with `ψ = ⊤`, the leaves some character reaches).
+  (with `ψ = ⊤`, the leaves some character reaches).
 -/
 
 /-- Transition terms, where `α` is the type of alphabet predicates and `β` the type of leaves. -/
@@ -80,13 +82,6 @@ def leaves : TTerm α β → List β
 
 @[simp] theorem leaves_node (p : α) (f g : TTerm α β) :
     leaves (node p f g) = leaves f ++ leaves g := rfl
-
-/-- Every transition term has a leaf. So `leaves (restrict f ⊥)` is a singleton, not `[]`,
-    which is why `reachableLeaves` first checks `Satisfiable ψ`. -/
-theorem leaves_ne_nil (f : TTerm α β) : leaves f ≠ [] := by
-  induction f with
-  | leaf b => simp
-  | node p l r ihl _ => simp [ihl]
 
 /-- The leaves of `t >>= f` are the leaves of `f b` for each leaf `b` of `t`, in order. -/
 @[simp] theorem leaves_bind (f : β → TTerm α γ) (t : TTerm α β) :
@@ -218,6 +213,52 @@ theorem leaves_restrict_subset (f : TTerm α β) (ψ : α) : leaves (f.restrict 
     · exact List.append_subset.2 ⟨hl _, hr _⟩
     · exact hl _
     · exact hr _
+
+/-! ### `bindR`: prune while grafting -/
+
+/-- Bind under a guard `ψ`, dropping infeasible branches during construction rather than
+    building the tree `t >>= f` fully upfront. It prunes `t` as `restrict` does, then
+    restricts each grafted `f b` too. -/
+def bindR (ψ : α) : TTerm α β → (β → TTerm α γ) → TTerm α γ
+  | leaf b, f => (f b).restrict ψ
+  | node p l r, f =>
+    if Satisfiable (ψ ⊓ p) then
+      if Satisfiable (ψ ⊓ pᶜ) then
+        node p (bindR (ψ ⊓ p) l f) (bindR (ψ ⊓ pᶜ) r f)
+      else bindR (ψ ⊓ p) l f
+    else bindR (ψ ⊓ pᶜ) r f
+
+/-- `bindR` builds the tree `>>=` builds, with unreachable branches removed. -/
+theorem bindR_eq_restrict_bind (t : TTerm α β) (f : β → TTerm α γ) (ψ : α) :
+    t.bindR ψ f = (t >>= f).restrict ψ := by
+  induction t generalizing ψ with
+  | leaf b => rfl
+  | node p l r ihl ihr => simp only [bindR, bind_node, restrict, ihl, ihr]
+
+universe v
+
+/-- `liftBinaryR op l r` is `liftBinary op l r` without the branches no character reaches.
+
+    The binder `{β γ δ : Type v}` keeps all leaf types in one universe, as `liftBinary`
+    requires. The lemmas below relating the two no longer apply without this. -/
+def liftBinaryR {β γ δ : Type v} (op : β → γ → δ) (l : TTerm α β) (r : TTerm α γ) :
+    TTerm α δ :=
+  l.bindR ⊤ fun x => liftUnary (op x) r
+
+private theorem liftBinaryR_eq (op : β → γ → δ) (l : TTerm α β) (r : TTerm α γ) :
+    liftBinaryR op l r = (liftBinary op l r).restrict ⊤ :=
+  bindR_eq_restrict_bind _ _ _
+
+/-- Pruning does not change the evaluation. -/
+theorem eval_liftBinaryR (op : β → γ → δ) (f : TTerm α β) (g : TTerm α γ) (x : σ) :
+    (liftBinaryR op f g)[x] = op (f[x]) (g[x]) := by
+  rw [liftBinaryR_eq, eval_restrict _ _ _ (by simp), eval_liftBinary]
+
+/-- Pruning can only ever drop leaves. -/
+theorem leaves_liftBinaryR_subset (op : β → γ → δ) (f : TTerm α β) (g : TTerm α γ) :
+    leaves (liftBinaryR op f g) ⊆ leaves (liftBinary op f g) := by
+  rw [liftBinaryR_eq]
+  exact leaves_restrict_subset _ _
 
 /-! ### `reachableLeaves`: leaves reachable under a guard -/
 

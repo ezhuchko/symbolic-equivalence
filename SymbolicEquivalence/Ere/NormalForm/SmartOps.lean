@@ -9,8 +9,8 @@ import Mathlib.Tactic.SplitIfs
   `mkCat`    `⊥ ⬝ R → ⊥`,  `R ⬝ ⊥ → ⊥`,  `ε ⬝ R → R`,  `R ⬝ ε → R`
   `mkInter`  `⊥ ⋒ R → ⊥`,  `R ⋒ ⊥ → ⊥`
 
-This is fine because the simplifications preserve the language (`Language`), nullability and
-derivatives (`Derivative`), and well-formedness.
+The simplifications are safe, since they preserve the language, nullability, derivatives
+and well-formedness. Well-formedness is proved below, the rest in `Language` and `Derivative`.
 -/
 open scoped Ere EreNorm
 

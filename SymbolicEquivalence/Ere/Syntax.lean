@@ -4,13 +4,13 @@ universe u
 inductive Ere (α : Type u) where
   | ε                 : Ere α
   | pred (e : α)      : Ere α
-  | union       : Ere α → Ere α → Ere α
+  | union             : Ere α → Ere α → Ere α
   | intersection      : Ere α → Ere α → Ere α
   | concatenation     : Ere α → Ere α → Ere α
   | star              : Ere α → Ere α
   | negation          : Ere α → Ere α
   | xor               : Ere α → Ere α → Ere α
-  deriving Repr, Ord, DecidableEq, Hashable
+  deriving Repr, DecidableEq, Hashable
 
 namespace Ere
 

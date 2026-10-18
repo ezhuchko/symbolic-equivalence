@@ -5,8 +5,8 @@ import SymbolicEquivalence.Ere.Similarity
 # Normalisation
 
 `normalise r` builds the normal form of `r` with the smart constructors. Similar expressions
-get the same normal form (`normalise_correctness`), but not the other way round, because the
-smart constructors simplify more than `≅` allows.
+get the same normal form (`normalise_correctness`), but not the other way round, since
+normalising simplifies more than `≅` allows.
 -/
 open scoped Ere
 
@@ -55,9 +55,8 @@ theorem normalise_correctness {a b : Ere α} (h : a ≅ b) :
 
 /-! ### The image of `normalise`
 
-`IsNormal s` says that `s` is an output of `normalise`, which is what the states of the ERE
-checker are. Every output of `normalise` is well-formed (`IsNormal.wellFormed`), but not the
-other way round. For example, `ε ⬝ₙ pred p` is well-formed, but `normalise` never produces it
+The states of the checker are the outputs of `normalise`. They are all well-formed, but not
+every well-formed expression is normalised. For example, `normalise` never produces `ε ⬝ₙ pred p`,
 because `mkCat` drops the `ε`. -/
 
 /-- `s` is an output of `normalise`. -/

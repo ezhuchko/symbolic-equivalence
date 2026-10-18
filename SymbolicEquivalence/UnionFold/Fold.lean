@@ -1,7 +1,7 @@
 import SymbolicEquivalence.SmartDedup
 
 /-!
-# Folding a list into an union
+# Folding a list into a union
 
 `fold union bot [a, b, c]` is `union a (union b c)`. The lemmas hold for any `union` satisfying the
 laws `UnionSim`. The main theorem is `fold_map_smartDedup` which says that removing duplicate
@@ -27,7 +27,7 @@ def fold (union : E → E → E) (bot : E) : List E → E
 @[simp] theorem fold_cons_cons (union : E → E → E) (bot a b : E) (bs : List E) :
     fold union bot (a :: b :: bs) = union a (fold union bot (b :: bs)) := rfl
 
-/-- If the tail is non-empty, `fold` of a cons is an `union`. -/
+/-- If the tail is non-empty, `fold` of a cons is a `union`. -/
 theorem fold_cons (union : E → E → E) (bot a : E) {as : List E} (h : as ≠ []) :
     fold union bot (a :: as) = union a (fold union bot as) := by
   match as with
@@ -49,7 +49,7 @@ class UnionSim (union : E → E → E) (Sim : E → E → Prop) : Prop where
   assoc {R₁ R₂ R₃ : E} : Sim (union (union R₁ R₂) R₃) (union R₁ (union R₂ R₃))
   /-- `union` is idempotent up to `Sim`. -/
   idem {R : E} : Sim (union R R) R
-  /-- A operand may be deleted from the end of a fold that already starts with it. -/
+  /-- An operand may be deleted from the end of a fold that already starts with it. -/
   dedup {R₁ R₂ : E} : Sim (union R₁ (union R₂ R₁)) (union R₁ R₂)
 
 variable {union : E → E → E} {Sim : E → E → Prop} [i : UnionSim union Sim]
@@ -114,17 +114,19 @@ section Map
 
 variable {β : Type _} [BEq β] [LawfulBEq β]
 
-/-- Erasing from `l₂` a operand already in `l₁` preserves the fold, up to `Sim`. -/
+/-- Erasing from `l₂` an operand already in `l₁` preserves the fold, up to `Sim`. -/
 private theorem fold_map_eraseAll (bot : E) (g : β → E) {x : β} {l₁ l₂ : List β}
     (h : x ∈ l₁) :
-    Sim (fold union bot ((l₁ ++ List.eraseAll x l₂).map g)) (fold union bot ((l₁ ++ l₂).map g)) := by
+    Sim (fold union bot ((l₁ ++ List.eraseAll x l₂).map g))
+      (fold union bot ((l₁ ++ l₂).map g)) := by
   match l₂ with
   | [] => exact i.refl
   | a :: as =>
     by_cases hax : a = x
     · subst hax
       rw [eraseAll_cons_self]
-      have hd : Sim (fold union bot ((l₁ ++ a :: as).map g)) (fold union bot ((l₁ ++ as).map g)) := by
+      have hd : Sim (fold union bot ((l₁ ++ a :: as).map g))
+          (fold union bot ((l₁ ++ as).map g)) := by
         simpa using fold_dedup (Sim := Sim) bot (l₂ := as.map g) (List.mem_map_of_mem h)
       exact i.trans (fold_map_eraseAll bot g (l₂ := as) h) (i.symm hd)
     · rw [eraseAll_cons_of_ne (Ne.symm hax)]

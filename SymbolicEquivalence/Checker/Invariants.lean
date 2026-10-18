@@ -44,7 +44,7 @@ def InvariantNullAgree (uf : UfManager β) : Prop :=
 def InvariantJustified (uf : UfManager β) (todo : List (β × β)) : Prop :=
   ∀ p q, uf.Equiv p q → Joined D uf todo p q
 
-/-- Every related pair `Progresses`.  This holds once `todo` is empty
+/-- Every related pair `Progresses`. This holds once `todo` is empty
     (`progress_of_empty_todo`). -/
 def InvariantProgress (uf : UfManager β) : Prop :=
   ∀ p q, uf.Equiv p q → Progresses D uf p q

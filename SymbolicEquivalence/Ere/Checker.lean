@@ -17,13 +17,6 @@ variable {α σ : Type*} [EffectiveBooleanAlgebra α σ]
 open Ere TTerm SymbolicDerivativeSystem
 open EreNorm (normalise reconvert IsNormal isNormal_normalise)
 
-/-- A normal form accepts `c :: w` exactly when its derivative by `c` accepts `w`. -/
-theorem deriv_iff_normalise [DecidableEq α] (e : Ere α) (c : σ) (w : List σ) :
-    c :: w ∈ (normalise e).lang ↔ w ∈ ((ρₙ (normalise e))[c]).lang := by
-  rw [EreNorm.derivative_normalise]
-  exact (EreNorm.matches_normalise e (c :: w)).trans
-    (Ere.cons_matches_iff.trans (EreNorm.matches_normalise _ w).symm)
-
 /-- Normal forms of `Ere` as a `SymbolicDerivativeSystem`, which the generic checker can run on. -/
 def Ere.system (α σ : Type*) [EffectiveBooleanAlgebra α σ] [DecidableEq α] :
     SymbolicDerivativeSystem α σ (EreNorm α) where
@@ -38,7 +31,7 @@ def Ere.system (α σ : Type*) [EffectiveBooleanAlgebra α σ] [DecidableEq α] 
   wf_deriv h c := h.derivative c
   deriv_iff := by
     rintro s ⟨e, rfl⟩ c w
-    exact deriv_iff_normalise e c w
+    exact EreNorm.deriv_iff_normalise e c w
 
 /-- The normal form of an expression is a well-formed state of `Ere.system`. -/
 theorem Ere.system_wf [DecidableEq α] (e : Ere α) : (Ere.system α σ).WF (normalise e) :=

@@ -41,7 +41,7 @@ private theorem main_loop_termination {p₀ q₀ : β} {st st' : State β}
   simp only [List.length_append, List.length_cons]
   omega
 
-/-- Repeat `nextState` until it returns an answer.  The invariant `inv` is carried along
+/-- Repeat `nextState` until it returns an answer. The invariant `inv` is carried along
     because the termination proof needs it. -/
 def loop (D : SymbolicDerivativeSystem α σ β) [D.Bounded]
     (p₀ q₀ : β) (hp : D.WF p₀) (hq : D.WF q₀)
@@ -54,7 +54,7 @@ decreasing_by
   exact main_loop_termination hp hq inv.reaches h
 
 /-- If `loop` returns `true`, the final union-find relates `p₀` and `q₀`, its related states
-    agree on nullability, and every related pair is justified with nothing pending.  If it
+    agree on nullability, and every related pair is justified with nothing pending. If it
     returns `false`, some pair reachable from `(p₀, q₀)` disagrees on nullability. -/
 theorem loop_spec {p₀ q₀ : β} {hp : D.WF p₀} {hq : D.WF q₀} {st : State β}
     (inv : LoopInv D p₀ q₀ st) :

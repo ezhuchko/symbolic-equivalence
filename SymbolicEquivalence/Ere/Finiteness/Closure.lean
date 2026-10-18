@@ -1,3 +1,4 @@
+import SymbolicEquivalence.Ere.Derivative
 import SymbolicEquivalence.Ere.Finiteness.Pieces
 
 /-!
@@ -16,8 +17,6 @@ namespace Ere
 
 /-- The leaves (states) of the transition term of `r`. -/
 def step (r : Ere α) : List (Ere α) := leaves (ρ r)
-
-end Ere
 
 theorem step_to_pieces {f e : Ere α} (e_in : e ∈ step f) :
     ∃ xs, unionOf xs ≅ e ∧ xs ∈ neSubsets (pieces f) := by
@@ -82,13 +81,13 @@ theorem step_to_pieces {f e : Ere α} (e_in : e ∈ step f) :
       ⟨_, mem_subsetUnions xs_in, _, mem_subsetUnions ys_in, rfl⟩⟩
 
 theorem step_to_subsetUnions {r : Ere α} :
-  step r ⊆[ (· ≅ ·) ] ⊕(pieces r) := fun _ in_step =>
+    step r ⊆[ (· ≅ ·) ] ⊕(pieces r) := fun _ in_step =>
   have ⟨xs, hx, xs_in⟩ := step_to_pieces in_step
   ⟨unionOf xs, mem_subsetUnions xs_in, symm hx⟩
 
 /-- Every iterated derivative of `r` is similar to a member of `⊕(pieces r)`. -/
-theorem Ere.derivWord_mem_pieces {r : Ere α} (v : List σ) :
-  (rawSystem α σ).derivWord r v ∈[ (· ≅ ·) ] ⊕(pieces r) :=
+theorem derivWord_mem_pieces {r : Ere α} (v : List σ) :
+    (rawSystem α σ).derivWord r v ∈[ (· ≅ ·) ] ⊕(pieces r) :=
   match v with
   | []     => subsetUnions_pieces_refl
   | c :: v =>
@@ -96,6 +95,8 @@ theorem Ere.derivWord_mem_pieces {r : Ere α} (v : List σ) :
       (step_to_subsetUnions _ (eval_mem_leaves (ρ r) c))
 
 /-- A derivative of a member of `⊕(pieces root)` is again in it up to `≅`. -/
-theorem Ere.deriv_mem_subsetUnions_pieces {root y : Ere α} (hy : y ∈ ⊕(pieces root)) (c : σ) :
+theorem deriv_mem_subsetUnions_pieces {root y : Ere α} (hy : y ∈ ⊕(pieces root)) (c : σ) :
     (ρ y)[c] ∈[ (· ≅ ·) ] ⊕(pieces root) :=
   subsetUnions_pieces_trans (step_to_subsetUnions _ (eval_mem_leaves (ρ y) c)) ⟨y, hy, Sim.refl⟩
+
+end Ere

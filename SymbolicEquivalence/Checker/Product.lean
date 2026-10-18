@@ -1,5 +1,4 @@
 import SymbolicEquivalence.SymbolicDerivativeSystem
-import Mathlib.Data.Set.Finite.Basic
 
 /-!
 # Products of symbolic derivative systems
@@ -41,9 +40,6 @@ def prod (D₁ : SymbolicDerivativeSystem α σ β₁) (D₂ : SymbolicDerivativ
 
 variable {D₁ : SymbolicDerivativeSystem α σ β₁} {D₂ : SymbolicDerivativeSystem α σ β₂}
 
-@[simp] theorem prod_null (s : β₁ × β₂) :
-    (prod D₁ D₂).null s = (D₁.null s.1 == D₂.null s.2) := rfl
-
 /-! ### Derivatives and reachability -/
 
 /-- The derivative of a product state is the pair of component derivatives. -/
@@ -81,7 +77,7 @@ abbrev Reaches (D : SymbolicDerivativeSystem α σ β) (p₀ q₀ : β) (s : β 
   (prod D D).Reach (p₀, q₀) s
 
 open scoped Classical in
-/-- The states reachable from `p₀` or from `q₀`, a finite set by `Bounded`.  This is only
+/-- The states reachable from `p₀` or from `q₀`, a finite set by `Bounded`. This is only
     used in the termination measure and never computed. -/
 noncomputable def jointClosure (D : SymbolicDerivativeSystem α σ β) [F : D.Bounded]
     {p₀ q₀ : β} (hp : D.WF p₀) (hq : D.WF q₀) : Finset β :=

@@ -1,6 +1,7 @@
 import SymbolicEquivalence.Ere.NormalForm.Normalise
 import SymbolicEquivalence.Ere.NormalForm.Reconvert
 import SymbolicEquivalence.Ere.Derivative
+import SymbolicEquivalence.Ere.NormalForm.Language
 
 /-!
 # Derivatives directly on normal forms
@@ -60,7 +61,7 @@ variable [Bot α]
 mutual
 
 theorem nullable_reconvert (r : EreNorm α) :
-  nullable r = (reconvert r).nullable := by
+    nullable r = (reconvert r).nullable := by
   match r with
   | .ε | .pred _ => simp [nullable, Ere.nullable]
   | ⋃ₙ[x, y | zs] =>
@@ -74,7 +75,7 @@ theorem nullable_reconvert (r : EreNorm α) :
 termination_by sizeOf r
 
 theorem nullableUnion_reconvert (x : EreNorm α) (xs : List (EreNorm α)) :
-  nullableUnion x xs = (unionOf ((x :: xs).map reconvert)).nullable := by
+    nullableUnion x xs = (unionOf ((x :: xs).map reconvert)).nullable := by
   match xs with
   | [] => simpa [nullableUnion] using nullable_reconvert x
   | y :: ys =>
@@ -180,7 +181,7 @@ variable {σ : Type*} [EffectiveBooleanAlgebra α σ] [DecidableEq α]
 mutual
 
 theorem derivative_eval_wf {r : EreNorm α} (h : WellFormed r) (a : σ) :
-  WellFormed ((derivative r)[a]) := by
+    WellFormed ((derivative r)[a]) := by
   match r, h with
   | .ε, _ =>
     simp only [derivative, eval_leaf]
@@ -328,5 +329,12 @@ theorem IsNormal.derivative {s : EreNorm α} (h : IsNormal s) (c : σ) :
     IsNormal ((ρₙ s)[c]) := by
   obtain ⟨e, rfl⟩ := h
   exact ⟨(ρ e)[c], (derivative_normalise e c).symm⟩
+
+/-- A normal form accepts `c :: w` exactly when its derivative by `c` accepts `w`. -/
+theorem deriv_iff_normalise (e : Ere α) (c : σ) (w : List σ) :
+    c :: w ∈ (normalise e).lang ↔ w ∈ ((ρₙ (normalise e))[c]).lang := by
+  rw [derivative_normalise]
+  exact (matches_normalise e (c :: w)).trans
+    (Ere.cons_matches_iff.trans (matches_normalise _ w).symm)
 
 end EreNorm

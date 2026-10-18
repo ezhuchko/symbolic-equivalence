@@ -4,9 +4,9 @@ import SymbolicEquivalence.Ere.UnionOf
 /-!
 # Converting normal forms back to `Ere`
 
-`reconvert` turns a normal form back into an `Ere`, with each union becoming a `unionOf`.
-`reconvert (normalise r)` has the same language as `r` (`EreNorm.lang_normalise`) but is not
-always similar (`≅`) to it, because the smart constructors simplify more than `≅` allows.
+`reconvert` turns a normal form back into an `Ere`. The result of `reconvert (normalise r)`
+has the same language as `r`, but may not be similar (`≅`) to it, since normalising simplifies
+more than `≅` allows.
 -/
 open Ere (Sim unionOf unionOf_map_append unionOf_map_smartDedup)
 
@@ -30,17 +30,17 @@ def reconvert : EreNorm α → Ere α
 @[simp] theorem reconvert_ε : reconvert (ε : EreNorm α) = .ε := by rw [reconvert]
 @[simp] theorem reconvert_pred (p : α) : reconvert (.pred p) = .pred p := by rw [reconvert]
 @[simp] theorem reconvert_union (x y : EreNorm α) (zs) :
-  reconvert ⋃ₙ[x, y | zs] = unionOf ((x :: y :: zs).map reconvert) := by
+    reconvert ⋃ₙ[x, y | zs] = unionOf ((x :: y :: zs).map reconvert) := by
   rw [reconvert]; simp
 @[simp] theorem reconvert_inter (l r : EreNorm α) :
-  reconvert (l ⋒ₙ r) = (reconvert l ⋒ reconvert r) := by rw [reconvert]
+    reconvert (l ⋒ₙ r) = (reconvert l ⋒ reconvert r) := by rw [reconvert]
 @[simp] theorem reconvert_cat (l r : EreNorm α) :
-  reconvert (l ⬝ₙ r) = (reconvert l ⬝ reconvert r) := by rw [reconvert]
+    reconvert (l ⬝ₙ r) = (reconvert l ⬝ reconvert r) := by rw [reconvert]
 @[simp] theorem reconvert_star (r : EreNorm α) :
-  reconvert r★ₙ = (reconvert r)★ := by rw [reconvert]
+    reconvert r★ₙ = (reconvert r)★ := by rw [reconvert]
 @[simp] theorem reconvert_neg (r : EreNorm α) : reconvert ~ₙr = ~ (reconvert r) := by rw [reconvert]
 @[simp] theorem reconvert_xor (l r : EreNorm α) :
-  reconvert (.xor l r) = .xor (reconvert l) (reconvert r) := by rw [reconvert]
+    reconvert (.xor l r) = .xor (reconvert l) (reconvert r) := by rw [reconvert]
 
 /-- `reconvert` maps `fromList` to `unionOf`. -/
 @[simp] theorem reconvert_fromList (x : EreNorm α) (xs : List (EreNorm α)) :

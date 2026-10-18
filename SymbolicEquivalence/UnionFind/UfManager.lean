@@ -8,8 +8,8 @@ Batteries' `UnionFind` works on `Nat` nodes `0, …, size - 1`. `UfManager α` a
 `HashMap α Nat` giving each key a node and `toNodeMap_inv` ensures that the nodes are
 in range.
 
-The equivalence checker only uses `merge`, specified by `merge_equiv_iff` and
-`merge_eq_true_iff`.
+The equivalence checker builds managers with `empty` and `merge`, and `merge` is specified by
+`merge_equiv_iff` and `merge_eq_true_iff`.
 -/
 
 open Batteries Std

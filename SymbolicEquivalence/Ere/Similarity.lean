@@ -21,13 +21,12 @@ inductive Sim : Ere α → Ere α → Prop where
   | symm       : Sim R₁ R₂ → Sim R₂ R₁
   | trans      : Sim R R₁ → Sim R₁ R₂ → Sim R R₂
   | neg_cong   : Sim R₁ R₂ → Sim ~R₁ ~R₂
-  | union_cong   : Sim R₁ R₂ → Sim S₁ S₂ → Sim (R₁ ⋓ S₁) (R₂ ⋓ S₂)
+  | union_cong : Sim R₁ R₂ → Sim S₁ S₂ → Sim (R₁ ⋓ S₁) (R₂ ⋓ S₂)
   | inter_cong : Sim R₁ R₂ → Sim S₁ S₂ → Sim (R₁ ⋒ S₁) (R₂ ⋒ S₂)
   | cat_cong   : Sim R₁ R₂ → Sim S₁ S₂ → Sim (R₁ ⬝ S₁) (R₂ ⬝ S₂)
   | star_cong  : Sim R₁ R₂ → Sim (R₁★) (R₂★)
   | xor_cong   : Sim R₁ R₂ → Sim S₁ S₂ → Sim (.xor R₁ S₁) (.xor R₂ S₂)
 scoped infix:37 " ≅ " => Sim
-end Ere
 open Ere.Sim
 
 theorem subsetUpTo_trans_sim {xs ys zs : List (Ere α)}
@@ -37,17 +36,6 @@ theorem subsetUpTo_trans_sim {xs ys zs : List (Ere α)}
 theorem subset_to_subsetUpTo_sim {xs ys : List (Ere α)} (h : xs ⊆ ys) :
     xs ⊆[ (· ≅ ·) ] ys := subset_to_subsetUpTo { refl := fun _ => Sim.refl } h
 
-theorem subsetUpTo_sim_cons (xs : List (Ere α)) :
-    xs ⊆[ (· ≅ ·) ] (x :: xs) :=
-  match xs with
-  | [] => subset_to_subsetUpTo_sim (List.nil_subset [x])
-  | y :: ys => fun z hz =>
-    match List.mem_cons.mp hz with
-    | Or.inl _ => ⟨z, List.mem_cons_of_mem x hz, refl⟩
-    | Or.inr hz' =>
-      have ⟨w, hw, hzw⟩ := (subsetUpTo_sim_cons (x := y) ys) z hz'
-      ⟨w, List.mem_cons_of_mem x hw, hzw⟩
-
 theorem equalityUpTo_refl_sim {xs : List (Ere α)} :
     xs =[ (· ≅ ·) ] xs := equalityUpTo_refl { refl := fun _ => Sim.refl }
 
@@ -55,3 +43,5 @@ theorem equalityUpTo_trans_sim {xs ys zs : List (Ere α)}
     (h : xs =[ (· ≅ ·) ] ys) (h1 : ys =[ (· ≅ ·) ] zs) :
     xs =[ (· ≅ ·) ] zs :=
   equalityUpTo_trans { trans := Sim.trans } h h1
+
+end Ere

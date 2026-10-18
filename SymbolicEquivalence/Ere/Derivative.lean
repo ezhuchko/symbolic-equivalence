@@ -1,4 +1,3 @@
-import SymbolicEquivalence.TransitionTerm
 import SymbolicEquivalence.Ere.Semantics
 import SymbolicEquivalence.SymbolicDerivativeSystem
 
@@ -61,7 +60,7 @@ def Ere.der (r : Ere α) (x : σ) : Ere α :=
 
 /-- The classical derivative and symbolic derivative of `r` coincide. -/
 theorem Ere.der_eq_eval_derivative (r : Ere α) (x : σ) :
-  der r x = (ρ r)[x] :=
+    der r x = (ρ r)[x] :=
   match r with
   | ε => by simp only [der, derivative, eval_leaf]
   | pred φ => by simp only [der, derivative, eval_node, eval_leaf]

@@ -1,5 +1,4 @@
 import SymbolicEquivalence.EffectiveBooleanAlgebra
-import SymbolicEquivalence.Ere.Syntax
 import SymbolicEquivalence.Ere.Similarity
 import Mathlib.Computability.Language
 
@@ -53,8 +52,8 @@ scoped notation:52 lhs:53 " ⊫ " rhs:53 => Ere.Matches lhs rhs
 @[simp] theorem matches_neg {xs : List σ} {r : Ere α} : (xs ⊫ ~r) ↔ ¬ (xs ⊫ r) := Iff.rfl
 
 @[simp] theorem matches_xor {xs : List σ} {l r : Ere α} :
-    (xs ⊫ .xor l r) ↔ ((xs ⊫ l) ↔ ¬ (xs ⊫ r)) := by
-  exact (Set.mem_symmDiff (s := (l.lang : Set (List σ))) (t := r.lang)).trans
+    (xs ⊫ .xor l r) ↔ ((xs ⊫ l) ↔ ¬ (xs ⊫ r)) :=
+  (Set.mem_symmDiff (s := (l.lang : Set (List σ))) (t := r.lang)).trans
     (by simp only [Matches]; tauto)
 
 /-- The language of a bounded repetition is the corresponding power. -/

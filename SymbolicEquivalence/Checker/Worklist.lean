@@ -22,7 +22,7 @@ structure State (β : Type*) [BEq β] [Hashable β] where
   todo : List (β × β)
 
 /-- One step of the loop, on the first pending pair:
-    * nothing pending: the roots are equivalent (`.inr true`);
+    * nothing pending: the two starting states are equivalent (`.inr true`);
     * a successor pair disagrees on nullability: they are not (`.inr false`);
     * otherwise: merge the successors and queue the newly linked ones (`.inl`). -/
 def nextState (D : SymbolicDerivativeSystem α σ β) (st : State β) : State β ⊕ Bool :=

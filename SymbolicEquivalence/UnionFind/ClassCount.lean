@@ -5,7 +5,7 @@ import Mathlib.Data.Finset.Image
 /-!
 # Counting classes after a merge
 
-The equivalence checker terminates because each merge in the union-find decreases the number
+The equivalence checker terminates because each merge that links two classes decreases the number
 of classes (`UfManager.numClasses`).
 -/
 
