@@ -47,6 +47,10 @@ theorem project_cons {a : σ} {v : List.Vector Bool (n + 1)} {w : Word σ (n + 1
 theorem length_project (w : Word σ (n + 1)) : (project w).length = w.length := by
   simp [project]
 
+/-- `project` distributes over concatenation. -/
+theorem project_append (v w : Word σ (n + 1)) : project (v ++ w) = project v ++ project w :=
+  List.map_append
+
 theorem extract_length_project (w : Word σ (n + 1)) :
     (extract w).length = (project w).length := by
   simp [extract]

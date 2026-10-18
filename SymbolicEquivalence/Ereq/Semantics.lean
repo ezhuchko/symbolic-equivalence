@@ -243,4 +243,76 @@ theorem matches_unique {w : Word σ n} {p : PExtension α n} :
     List.existsUnique_getElem_iff (P := fun b => p.models b = true)]
   simp only [no_p]
 
+/-! ### `∃ʳ` on `ε`, `⊥` and the last bit -/
+
+/-- A word matching a predicate has length one. -/
+theorem length_of_matches_pred {w : Word σ n} {φ : PExtension α n} (h : w ⊫ pred φ) :
+    w.length = 1 := by
+  obtain ⟨c, rfl, _⟩ := matches_pred.mp h; rfl
+
+theorem exists_eps (xs : Word σ n) :
+    xs ⊫ ∃ʳ (ε : Ereq α (n + 1)) ↔ xs ⊫ (ε : Ereq α n) := by
+  simp only [matches_ex, matches_eps]
+  constructor
+  · rintro ⟨s, h⟩
+    simpa using congrArg List.length h
+  · rintro rfl; exact ⟨⟨[], rfl⟩, rfl⟩
+
+theorem exists_bot (xs : Word σ n) :
+    xs ⊫ ∃ʳ (pred .bot : Ereq α (n + 1)) ↔ xs ⊫ (pred .bot : Ereq α n) := by
+  simp [not_matches_bot]
+
+/-- Quantifying a predicate that holds whenever the last bit is `b` gives `⊤`. -/
+private theorem exists_bit (b : Bool) {φ : PExtension α (n + 1)}
+    (hφ : ∀ a (v : List.Vector Bool n), φ.models (a, v.snoc b)) (xs : Word σ n) :
+    xs ⊫ ∃ʳ (pred φ) ↔ xs ⊫ (pred .top : Ereq α n) := by
+  constructor
+  · rintro ⟨s, h⟩
+    have hlen := length_of_matches_pred h
+    rw [Word.length_extend] at hlen
+    match xs, hlen with
+    | [x], _ => simp [PExtension.models]
+  · intro h
+    obtain ⟨⟨a, v⟩, rfl, -⟩ := matches_pred.mp h
+    exact ⟨⟨[b], rfl⟩, matches_pred_cons.mpr ⟨rfl, hφ a v⟩⟩
+
+/-- After quantifying the last bit, the atom `pₙ` holds on every letter. -/
+theorem exists_last_bit (xs : Word σ n) :
+    xs ⊫ ∃ʳ (pred (.p (Fin.last n)) : Ereq α (n + 1)) ↔ xs ⊫ (pred .top : Ereq α n) :=
+  exists_bit true (fun _ _ => by simp [PExtension.models, List.Vector.getElem_snoc_last]) xs
+
+/-- After quantifying the last bit, the negated atom `¬pₙ` holds on every letter. -/
+theorem exists_not_last_bit (xs : Word σ n) :
+    xs ⊫ ∃ʳ (pred (.not (.p (Fin.last n))) : Ereq α (n + 1))
+      ↔ xs ⊫ (pred .top : Ereq α n) :=
+  exists_bit false (fun _ _ => by simp [PExtension.models, List.Vector.getElem_snoc_last]) xs
+
+/-! ### Predicate complement and regex complement -/
+
+/-- Predicate complement is regex complement restricted to single letters. -/
+theorem matches_pred_not {xs : Word σ n} {φ : PExtension α n} :
+    xs ⊫ pred (.not φ) ↔ xs ⊫ (~(pred φ) ⋒ (pred .top : Ereq α n)) := by
+  match xs with
+  | [] => simp
+  | [x] => simp [PExtension.models]
+  | _ :: _ :: _ => simp
+
+/-- Regex complement of an atom differs from its predicate complement, already on the empty
+    word. -/
+theorem neg_pred_ne_pred_not (i : Fin n) :
+    ¬ ∀ xs : Word σ n, xs ⊫ ~(pred (.p i) : Ereq α n) ↔ xs ⊫ (pred (.not (.p i)) : Ereq α n) :=
+  fun h => matches_pred_nil ((h []).mp (matches_neg.mpr matches_pred_nil))
+
+/-- Quantifying the regex complement of the last atom gives every word. -/
+theorem exists_neg_last_bit (xs : Word σ n) :
+    xs ⊫ ∃ʳ (~(pred (.p (Fin.last n))) : Ereq α (n + 1)) ↔ xs ⊫ (Ereq.any : Ereq α n) := by
+  refine iff_of_true ?_ (any_matches xs)
+  rw [matches_ex]
+  by_cases hlen : xs.length = 1
+  · obtain ⟨⟨a, v⟩, rfl⟩ := List.length_eq_one_iff.mp hlen
+    refine ⟨⟨[false], rfl⟩, fun h => ?_⟩
+    simpa [PExtension.models, List.Vector.getElem_snoc_last] using (matches_pred_cons.mp h).2
+  · refine ⟨⟨List.replicate xs.length false, by simp⟩, fun h => hlen ?_⟩
+    exact (Word.length_extend xs _).symm.trans (length_of_matches_pred h)
+
 end Ereq
