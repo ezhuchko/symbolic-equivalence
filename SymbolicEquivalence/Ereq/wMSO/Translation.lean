@@ -172,8 +172,8 @@ def Formula.size : Formula α n → Nat
   | .not φ | .exists₂ φ => φ.size + 1
   | .lt _ _ | .sub _ _ | .pred _ _ | .singleton _ => 1
 
-/-- The translated formula has at most 13 times as many constructors as the input formula. -/
-theorem Formula.size_toEreq (φ : Formula α n) : ⌜φ⌝.size ≤ 13 * φ.size := by
+/-- The translated formula has at most 12 times as many constructors as the input formula. -/
+theorem Formula.size_toEreq (φ : Formula α n) : ⌜φ⌝.size ≤ 12 * φ.size := by
   induction φ with
   | or φ ψ ihφ ihψ | and φ ψ ihφ ihψ =>
     simp only [Formula.toEreq, Ereq.size, Formula.size]; omega
