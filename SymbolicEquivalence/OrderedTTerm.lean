@@ -89,7 +89,7 @@ theorem apply_node_node (op : β → γ → δ)
 theorem mem_leaves_apply (op : β → γ → δ) {e : δ} :
     ∀ (f : TTerm κ β) (g : TTerm κ γ), e ∈ leaves (apply op f g) →
       ∃ x ∈ leaves f, ∃ y ∈ leaves g, e = op x y
-  | leaf _, leaf _ => by simp +contextual [eq_comm]
+  | leaf _, leaf _ => by simp
   | leaf b, node _ g₁ g₀ => by
     have := mem_leaves_apply (e := e) op (leaf b) g₁
     have := mem_leaves_apply (e := e) op (leaf b) g₀
