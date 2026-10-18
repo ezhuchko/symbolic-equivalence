@@ -156,3 +156,26 @@ theorem Formula.lang_exists (φ : Formula α (n + 1)) :
   rw [Ereq.exists_iff_project]
   exact ⟨fun ⟨w', hp, h⟩ => ⟨w', Formula.mem_lang_iff_matches.mpr h, hp⟩,
          fun ⟨w', h, hp⟩ => ⟨w', hp, Formula.mem_lang_iff_matches.mp h⟩⟩
+
+/-! ### The translation is linear -/
+
+/-- The number of constructors of an `Ereq`, counting each predicate as one. -/
+def Ereq.size : Ereq α n → Nat
+  | .ε => 1
+  | .pred _ => 1
+  | .union l r | .intersection l r | .concatenation l r => l.size + r.size + 1
+  | .star r | .negation r | .existential r => r.size + 1
+
+/-- The number of constructors of a formula. -/
+def Formula.size : Formula α n → Nat
+  | .or φ ψ | .and φ ψ => φ.size + ψ.size + 1
+  | .not φ | .exists₂ φ => φ.size + 1
+  | .lt _ _ | .sub _ _ | .pred _ _ | .singleton _ => 1
+
+/-- The translated formula has at most 13 times as many constructors as the input formula. -/
+theorem Formula.size_toEreq (φ : Formula α n) : ⌜φ⌝.size ≤ 13 * φ.size := by
+  induction φ with
+  | or φ ψ ihφ ihψ | and φ ψ ihφ ihψ =>
+    simp only [Formula.toEreq, Ereq.size, Formula.size]; omega
+  | not φ ih | .exists₂ φ ih => simp only [Formula.toEreq, Ereq.size, Formula.size]; omega
+  | lt | sub | pred | singleton => simp [Formula.toEreq, Ereq.size, Ereq.any, Formula.size]
