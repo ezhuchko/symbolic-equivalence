@@ -13,3 +13,4 @@ By symbolic we mean that an alphabet is modelled by an effective Boolean algebra
 * `UnionFold` folds a list into a union and shows that removing duplicates does not change it
 * `SmartDedup`, `NeSubsets`, `UpTo` are list helpers used in the finiteness proofs
 * `Ere` is an instance for Extended Regular Expressions
+* `Ereq` is an instance for Extended Regular Expressions with Quantifiers and wMSO formulas (through a translation)
