@@ -133,6 +133,11 @@ theorem mkUnion_assoc {a b c : EreNorm α} (ha : WellFormed a) (hb : WellFormed 
     toList_mkUnion ha hna (mkUnion_ne_bot hb hnb), toList_mkUnion hb hnb hnc,
     smartDedup_assoc]
 
+/-- Right deduplication, nested as in `Sim.dedup`. -/
+theorem mkUnion_right_dedup {a b : EreNorm α} (ha : WellFormed a) (hb : WellFormed b) :
+    (a ⋓' (b ⋓' a)) = a ⋓' b := by
+  rw [← mkUnion_assoc ha hb, mkUnion_dedup ha hb]
+
 /-! ## The n-ary fold
 
 The derivative of a union is `unionAll` over the derivatives of its operands

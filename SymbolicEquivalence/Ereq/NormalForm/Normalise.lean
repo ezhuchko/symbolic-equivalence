@@ -46,8 +46,7 @@ theorem normalise_correctness {a b : EreqAtomic α n} (h : a ≅ b) :
     rw [mkUnion_assoc (wellFormed_of_normalise _) (wellFormed_of_normalise _)]
   | dedup =>
     simp only [normalise]
-    conv => rhs; rw [← mkUnion_dedup (wellFormed_of_normalise _) (wellFormed_of_normalise _)]
-    rw [mkUnion_assoc (wellFormed_of_normalise _) (wellFormed_of_normalise _)]
+    exact mkUnion_right_dedup (wellFormed_of_normalise _) (wellFormed_of_normalise _)
   | idem => simp only [normalise]; exact mkUnion_idem (wellFormed_of_normalise _)
   | _ => simp_all [normalise]
 
