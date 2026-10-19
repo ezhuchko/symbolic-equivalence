@@ -14,7 +14,7 @@ universe u
 variable {α : Type*}
 
 /-- The type of regular expressions with the existential quantifier. -/
-inductive Ereq (α : Type u) : Nat → Type u
+inductive Ereq (α : Type u) : Nat → Type u where
   | ε             : Ereq α n
   | pred (e : PExtension α n) : Ereq α n
   | union         : Ereq α n → Ereq α n → Ereq α n
@@ -50,7 +50,7 @@ end Ereq
 
 /-- Regular expressions with the existential quantifier whose predicates are atomic
     `FundamentalPredicate`s. -/
-inductive EreqAtomic (α : Type u) : Nat → Type u
+inductive EreqAtomic (α : Type u) : Nat → Type u where
   | ε             : EreqAtomic α n
   | pred (e : FundamentalPredicate α n) : EreqAtomic α n
   | union         : EreqAtomic α n → EreqAtomic α n → EreqAtomic α n

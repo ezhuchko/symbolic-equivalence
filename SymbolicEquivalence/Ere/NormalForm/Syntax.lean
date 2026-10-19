@@ -16,7 +16,7 @@ variable {α : Type*}
 
 /-- Normal forms of `Ere`, in which a union is a single node with at least two
     operands. -/
-inductive EreNorm (α : Type*) where
+inductive EreNorm (α : Type u) where
   | ε                  : EreNorm α
   | pred (e : α)       : EreNorm α
   | union              : EreNorm α → EreNorm α → List (EreNorm α) → EreNorm α

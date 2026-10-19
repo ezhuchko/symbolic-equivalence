@@ -23,7 +23,7 @@ checking the remaining base predicate with the satisfiability check of `α`.
 -/
 
 /-- Predicates over `Elem σ n`: base predicates, the bit atoms `pᵢ`, and Boolean connectives. -/
-inductive PExtension (α : Type u) (n : Nat) : Type u where
+inductive PExtension (α : Type u) (n : Nat) where
   | p    (i : Fin n) : PExtension α n
   | pred (p : α) : PExtension α n
   | top : PExtension α n
@@ -31,7 +31,7 @@ inductive PExtension (α : Type u) (n : Nat) : Type u where
   | and : PExtension α n → PExtension α n → PExtension α n
   | or  : PExtension α n → PExtension α n → PExtension α n
   | not : PExtension α n → PExtension α n
-deriving Repr, DecidableEq
+  deriving Repr, DecidableEq
 
 /-- `(c, v)` is an element of the extended alphabet where `c : σ` is a symbol together with an
     `n`-bit vector `v`. -/

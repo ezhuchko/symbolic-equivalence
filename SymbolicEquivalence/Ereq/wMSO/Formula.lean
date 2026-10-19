@@ -13,20 +13,20 @@ universe u
 variable {α σ : Type*} [EffectiveBooleanAlgebra α σ]
 
 /-- wMSO formulas with `i` set variables. -/
-inductive Formula (α : Type u) : Nat → Type u
-| or : Formula α i → Formula α i → Formula α i
-| and : Formula α i → Formula α i → Formula α i
-| not : Formula α i → Formula α i
--- `∃Xᵢ. φ`, which adds a new last variable
-| exists₂ : Formula α (i + 1) → Formula α i
--- `Xᵢ < Xⱼ`
-| lt : Fin i → Fin i → Formula α i
--- `Xᵢ ⊆ Xⱼ`
-| sub : Fin i → Fin i → Formula α i
--- `φ(Xᵢ)`, some position in `Xᵢ` has a letter satisfying `φ`
-| pred (φ : α) (n : Fin i) : Formula α i
--- `|Xᵢ| = 1`
-| singleton : Fin i → Formula α i
+inductive Formula (α : Type u) : Nat → Type u where
+  | or : Formula α i → Formula α i → Formula α i
+  | and : Formula α i → Formula α i → Formula α i
+  | not : Formula α i → Formula α i
+  -- `∃Xᵢ. φ`, which adds a new last variable
+  | exists₂ : Formula α (i + 1) → Formula α i
+  -- `Xᵢ < Xⱼ`
+  | lt : Fin i → Fin i → Formula α i
+  -- `Xᵢ ⊆ Xⱼ`
+  | sub : Fin i → Fin i → Formula α i
+  -- `φ(Xᵢ)`, some position in `Xᵢ` has a letter satisfying `φ`
+  | pred (φ : α) (n : Fin i) : Formula α i
+  -- `|Xᵢ| = 1`
+  | singleton : Fin i → Formula α i
 
 namespace Formula
 

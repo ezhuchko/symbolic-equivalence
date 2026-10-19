@@ -92,12 +92,13 @@ instance (priority := low) Models.decidableSatOfFintype [Models α σ] [Fintype 
   fun p => decidable_of_iff (∃ c, c ⊨ p) (Models.satisfiable_def p).symm
 
 /-- Syntax for Boolean predicates equipped with Boolean semantics. -/
-inductive BA (α : Type u)
-  | atom (a : α)
-  | top | bot
-  | and (a b : BA α)
-  | or (a b : BA α)
-  | not (a : BA α)
+inductive BA (α : Type u) where
+  | atom (a : α) : BA α
+  | top : BA α
+  | bot : BA α
+  | and (a b : BA α) : BA α
+  | or (a b : BA α) : BA α
+  | not (a : BA α) : BA α
   deriving Repr, DecidableEq, Hashable
 open BA
 
