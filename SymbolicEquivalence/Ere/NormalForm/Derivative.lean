@@ -141,7 +141,7 @@ section Def
 
 /-! ### The derivative on normal forms -/
 
-variable {σ : Type*} [EffectiveBooleanAlgebra α σ] [DecidableEq α]
+variable {σ : Type*} [EffectiveBooleanAlgebra α σ] [DecidableSat α] [DecidableEq α]
 
 mutual
 
@@ -150,22 +150,22 @@ mutual
 def derivative : EreNorm α → TTerm α (EreNorm α)
   | .ε => leaf (.pred ⊥)
   | .pred b => node b (leaf .ε) (leaf (.pred ⊥))
-  | ⋃ₙ[x, y | zs] => liftBinary (· ⋓' ·) (derivative x) (derivativeUnion y zs)
-  | l ⋒ₙ r => liftBinary mkInter (derivative l) (derivative r)
+  | ⋃ₙ[x, y | zs] => liftBinaryR (· ⋓' ·) (derivative x) (derivativeUnion y zs)
+  | l ⋒ₙ r => liftBinaryR mkInter (derivative l) (derivative r)
   | l ⬝ₙ r =>
     if nullable l then
-      liftBinary (· ⋓' ·) (liftUnary (mkCat · r) (derivative l)) (derivative r)
+      liftBinaryR (· ⋓' ·) (liftUnary (mkCat · r) (derivative l)) (derivative r)
     else
       liftUnary (mkCat · r) (derivative l)
   | r★ₙ => liftUnary (mkCat · r★ₙ) (derivative r)
   | ~ₙ r => liftUnary (~ₙ ·) (derivative r)
-  | .xor l r => liftBinary .xor (derivative l) (derivative r)
+  | .xor l r => liftBinaryR .xor (derivative l) (derivative r)
 termination_by r => sizeOf r
 
 /-- Derivative of an operand list, folded with `mkUnion`. -/
 def derivativeUnion : EreNorm α → List (EreNorm α) → TTerm α (EreNorm α)
   | x, [] => derivative x
-  | x, y :: ys => liftBinary mkUnion (derivative x) (derivativeUnion y ys)
+  | x, y :: ys => liftBinaryR mkUnion (derivative x) (derivativeUnion y ys)
 termination_by x xs => sizeOf x + sizeOf xs
 
 end
@@ -176,7 +176,7 @@ scoped prefix:max " ρₙ " => EreNorm.derivative
 
 /-! ## Well-formedness is preserved -/
 
-variable {σ : Type*} [EffectiveBooleanAlgebra α σ] [DecidableEq α]
+variable {σ : Type*} [EffectiveBooleanAlgebra α σ] [DecidableSat α] [DecidableEq α]
 
 mutual
 
@@ -190,16 +190,16 @@ theorem derivative_eval_wf {r : EreNorm α} (h : WellFormed r) (a : σ) :
     simp only [derivative, eval_node]
     split <;> constructor
   | ⋃ₙ[x, y | zs], .union hwf _ _ =>
-    simp only [derivative, eval_liftBinary]
+    simp only [derivative, eval_liftBinaryR]
     exact wellFormed_mkUnion (derivative_eval_wf (hwf x (by simp)) a)
       (derivativeUnion_eval_wf (hwf y (by simp)) (fun z hz => hwf z (by simp [hz])) a)
   | l ⋒ₙ r, .intersection hl hr =>
-    simp only [derivative, eval_liftBinary]
+    simp only [derivative, eval_liftBinaryR]
     exact wellFormed_mkInter (derivative_eval_wf hl a) (derivative_eval_wf hr a)
   | l ⬝ₙ r, .concatenation hl hr =>
     by_cases hn : nullable l
     · rw [derivative, ite_eq_left hn]
-      simp only [eval_liftBinary, eval_liftUnary]
+      simp only [eval_liftBinaryR, eval_liftUnary]
       exact wellFormed_mkUnion
         (wellFormed_mkCat (derivative_eval_wf hl a) hr)
         (derivative_eval_wf hr a)
@@ -213,7 +213,7 @@ theorem derivative_eval_wf {r : EreNorm α} (h : WellFormed r) (a : σ) :
     simp only [derivative, eval_liftUnary]
     exact .negation (derivative_eval_wf hr a)
   | .xor l r, .xor hl hr =>
-    simp only [derivative, eval_liftBinary]
+    simp only [derivative, eval_liftBinaryR]
     exact .xor (derivative_eval_wf hl a) (derivative_eval_wf hr a)
 termination_by sizeOf r
 
@@ -223,7 +223,7 @@ theorem derivativeUnion_eval_wf {x : EreNorm α} {xs : List (EreNorm α)}
   match xs with
   | [] => simpa [derivativeUnion] using derivative_eval_wf hx a
   | y :: ys =>
-    simp only [derivativeUnion, eval_liftBinary]
+    simp only [derivativeUnion, eval_liftBinaryR]
     exact wellFormed_mkUnion (derivative_eval_wf hx a)
       (derivativeUnion_eval_wf (h y (by simp)) (fun z hz => h z (by simp [hz])) a)
 termination_by sizeOf x + sizeOf xs
@@ -237,14 +237,14 @@ theorem eval_derivativeUnion (x : EreNorm α) (xs : List (EreNorm α)) (c : σ) 
     (derivativeUnion x xs)[c] = unionAll ((x :: xs).map (fun w => (ρₙ w)[c])) := by
   induction xs generalizing x with
   | nil => simp [derivativeUnion]
-  | cons y ys ih => simp only [derivativeUnion, eval_liftBinary, List.map_cons, unionAll_cons, ih]
+  | cons y ys ih => simp only [derivativeUnion, eval_liftBinaryR, List.map_cons, unionAll_cons, ih]
 
 /-- The derivative of any normal form is the fold over its operand list. -/
 theorem eval_derivative_toList (r : EreNorm α) (c : σ) :
     (ρₙ r)[c] = unionAll ((toList r).map (fun w => (ρₙ w)[c])) := by
   cases r with
   | union x y zs =>
-    simp only [derivative, eval_liftBinary, eval_derivativeUnion, toList_union,
+    simp only [derivative, eval_liftBinaryR, eval_derivativeUnion, toList_union,
       List.map_cons, unionAll_cons]
   | _ => simp [toList]
 
@@ -276,7 +276,7 @@ theorem derivative_mkInter (A B : EreNorm α) (c : σ) :
   · subst bl; simp [derivative]
   by_cases br : B = pred ⊥
   · subst br; simp [derivative]
-  rw [mkInter_eq_inter bl br, derivative, eval_liftBinary]
+  rw [mkInter_eq_inter bl br, derivative, eval_liftBinaryR]
 
 /-- The derivative of `mkCat A B` follows the concatenation rule with smart constructors.
     The `A = ε` case needs `mkUnion_bot_left`. -/
@@ -294,7 +294,7 @@ theorem derivative_mkCat (A B : EreNorm α) (c : σ) :
   rw [mkCat_eq_cat bl br el er]
   by_cases hn : nullable A
   · rw [derivative, ite_eq_left hn, ite_eq_left hn]
-    simp only [eval_liftBinary, eval_liftUnary]
+    simp only [eval_liftBinaryR, eval_liftUnary]
   · rw [derivative, ite_eq_right hn, ite_eq_right hn]
     simp only [eval_liftUnary]
 
@@ -322,7 +322,8 @@ theorem derivative_normalise (y : Ere α) (c : σ) :
       simp only [eval_liftUnary, normalise, ihl]
   | star r ih => simp only [normalise, derivative, Ere.derivative, eval_liftUnary, ih]
   | negation r ih => simp only [normalise, derivative, Ere.derivative, eval_liftUnary, ih]
-  | xor l r ihl ihr => simp only [normalise, derivative, Ere.derivative, eval_liftBinary, ihl, ihr]
+  | xor l r ihl ihr =>
+    simp only [normalise, derivative, Ere.derivative, eval_liftBinary, eval_liftBinaryR, ihl, ihr]
 
 /-- Derivatives of an output of `normalise` are again outputs of `normalise`. -/
 theorem IsNormal.derivative {s : EreNorm α} (h : IsNormal s) (c : σ) :

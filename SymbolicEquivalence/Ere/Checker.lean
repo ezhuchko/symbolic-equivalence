@@ -18,7 +18,7 @@ open Ere TTerm SymbolicDerivativeSystem
 open EreNorm (normalise reconvert IsNormal isNormal_normalise)
 
 /-- Normal forms of `Ere` as a `SymbolicDerivativeSystem`, which the generic checker can run on. -/
-def Ere.system (α σ : Type*) [EffectiveBooleanAlgebra α σ] [DecidableEq α] :
+def Ere.system (α σ : Type*) [EffectiveBooleanAlgebra α σ] [DecidableSat α] [DecidableEq α] :
     SymbolicDerivativeSystem α σ (EreNorm α) where
   WF := IsNormal
   Lang s w := w ∈ s.lang
@@ -33,11 +33,11 @@ def Ere.system (α σ : Type*) [EffectiveBooleanAlgebra α σ] [DecidableEq α] 
     rintro s ⟨e, rfl⟩ c w
     exact EreNorm.deriv_iff_normalise e c w
 
-/-- The normal form of an expression is a well-formed state of `Ere.system`. -/
-theorem Ere.system_wf [DecidableEq α] (e : Ere α) : (Ere.system α σ).WF (normalise e) :=
-  isNormal_normalise e
-
 variable [DecidableSat α] [DecidableEq α]
+
+/-- The normal form of an expression is a well-formed state of `Ere.system`. -/
+theorem Ere.system_wf (e : Ere α) : (Ere.system α σ).WF (normalise e) :=
+  isNormal_normalise e
 
 /-! ### The reachable states are bounded -/
 
