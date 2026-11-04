@@ -186,16 +186,16 @@ private theorem mergeAll_maintains_null_agree
 private theorem mergeAll_maintains_justified_aux
     {lvs : List (β × β)} {uf : UfManager β} {rest : List (β × β)}
     (inv_before : InvariantJustified D uf rest) :
-    InvariantJustified D (mergeAll uf lvs).1 (rest ++ (mergeAll uf lvs).2) := by
+    InvariantJustified D (mergeAll uf lvs).1 ((mergeAll uf lvs).2 ++ rest) := by
   intro p q hpq
   refine Relation.EqvGen.eqvGen_le ?_ p q ((mergeAll_equiv_iff_linked uf lvs p q).mp hpq)
   rintro a b (hab | hab)
   · -- an old related pair: its chain still works in the bigger union-find
     exact (inv_before a b hab).extends
       (fun _ _ h => mergeAll_preserves_equiv _ h)
-      (fun _ hs => List.mem_append_left _ hs)
+      (fun _ hs => List.mem_append_right _ hs)
   · -- a linked pair: it is pending, hence justified by itself
-    exact Relation.EqvGen.rel _ _ (Or.inl (List.mem_append_right _ hab))
+    exact Relation.EqvGen.rel _ _ (Or.inl (List.mem_append_left _ hab))
 
 /-! ## The worklist step -/
 
@@ -218,10 +218,15 @@ private theorem mergeAll_maintains_justified
     {t : β × β} {uf : UfManager β} {todo : List (β × β)}
     (invJust : InvariantJustified D uf (t :: todo)) :
     InvariantJustified D (mergeAll uf ((prod D D).succs t)).1
-      (todo ++ (mergeAll uf ((prod D D).succs t)).2) :=
-  discharge_worklist_head
-    (mergeAll_maintains_justified_aux invJust)
-    mergeAll_establishes_progresses
+      ((mergeAll uf ((prod D D).succs t)).2 ++ todo) := by
+  apply discharge_worklist_head ?_ mergeAll_establishes_progresses
+  intro p q hpq
+  have := (mergeAll_maintains_justified_aux invJust) p q hpq
+  exact this.extends
+    (fun _ _ h => h)
+    (fun _ h => by simp only [List.mem_cons, List.mem_append];
+                   simp only [List.mem_append, List.mem_cons] at h;
+                   exact or_left_comm.mp h)
 
 private theorem nextState_invariantNullAgree {st st' : State β}
     (invNull : InvariantNullAgree D st.uf)
@@ -248,8 +253,8 @@ private theorem nextState_todo_closed {P : β × β → Prop} {st st' : State β
   intro x hx
   rw [htodo'] at hx
   rcases List.mem_append.mp hx with hm | hm
-  · exact h x (htodo ▸ List.mem_cons_of_mem _ hm)
   · exact hstep t x (h t (htodo ▸ List.mem_cons_self)) ((mergeAll_linked_sublist _ _).mem hm)
+  · exact h x (htodo ▸ List.mem_cons_of_mem _ hm)
 
 private theorem nextState_invariantTodoReaches {p₀ q₀ : β} {st st' : State β}
     (iR : InvariantTodoReaches D p₀ q₀ st.todo)

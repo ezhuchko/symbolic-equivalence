@@ -36,8 +36,8 @@ def nextState (D : SymbolicDerivativeSystem α σ β) (st : State β) : State β
     else
       -- `r.1`, `r.2` rather than a destructuring `let`, so the proofs can unfold them
       let r := mergeAll st.uf lvs
-      -- new pairs go at the back (a queue, not a stack)
-      .inl ⟨r.1, todo' ++ r.2⟩
+      -- new pairs go at the front (a stack, not a queue)
+      .inl ⟨r.1, r.2 ++ todo'⟩
 
 variable {D : SymbolicDerivativeSystem α σ β}
 
@@ -48,7 +48,7 @@ theorem nextState_inl {st st' : State β} (res : nextState D st = .inl st') :
       st.todo = t :: todo' ∧
       (∀ l ∈ (prod D D).succs t, D.null l.1 = D.null l.2) ∧
       st'.uf = (mergeAll st.uf ((prod D D).succs t)).1 ∧
-      st'.todo = todo' ++ (mergeAll st.uf ((prod D D).succs t)).2 := by
+      st'.todo = (mergeAll st.uf ((prod D D).succs t)).2 ++ todo' := by
   obtain ⟨uf, todo⟩ := st
   unfold nextState at res
   match todo with
