@@ -48,7 +48,15 @@ theorem lang_mkUnion (a b : EreNorm α) :
   · subst hna; rw [mkUnion_bot_left, reconvert_pred, Ere.lang_pred_bot, zero_add]
   by_cases hnb : b = EreNorm.pred ⊥
   · subst hnb; rw [mkUnion_bot_right, reconvert_pred, Ere.lang_pred_bot, add_zero]
-  rw [Ere.sim_lang_eq (reconvert_mkUnion_of_ne_bot hna hnb)]
+  by_cases hta : a = (pred ⊤)★ₙ
+  · subst hta
+    rw [mkUnion_topStar_left, reconvert_star, reconvert_pred, Ere.lang_pred_top_star]
+    exact (top_sup_eq _).symm
+  by_cases htb : b = (pred ⊤)★ₙ
+  · subst htb
+    rw [mkUnion_topStar_right, reconvert_star, reconvert_pred, Ere.lang_pred_top_star]
+    exact (sup_top_eq _).symm
+  rw [Ere.sim_lang_eq (reconvert_mkUnion_of_ne_bot hna hnb hta htb)]
   rfl
 
 /-- The language of `mkCat a b` is the concatenation of their languages. Its simplifications
@@ -80,8 +88,32 @@ theorem lang_mkInter (a b : EreNorm α) :
   · subst br
     rw [mkInter_bot_right, reconvert_pred, Ere.lang_pred_bot]
     exact (Set.inter_empty _).symm
-  rw [mkInter_eq_inter bl br, reconvert_inter]
+  by_cases tl : a = (pred ⊤)★ₙ
+  · subst tl
+    rw [mkInter_topStar_left, reconvert_star, reconvert_pred, Ere.lang_pred_top_star]
+    exact (top_inf_eq _).symm
+  by_cases tr : b = (pred ⊤)★ₙ
+  · subst tr
+    rw [mkInter_topStar_right, reconvert_star, reconvert_pred, Ere.lang_pred_top_star]
+    exact (inf_top_eq _).symm
+  rw [mkInter_eq_inter bl br tl tr, reconvert_inter]
   rfl
+
+/-- The language of `mkNeg a` is the complement of the language of `a`. -/
+theorem lang_mkNeg (a : EreNorm α) : (mkNeg a).lang = ((a.lang : Language σ))ᶜ := by
+  unfold EreNorm.lang
+  by_cases hb : a = EreNorm.pred ⊥
+  · subst hb
+    simp only [mkNeg_bot, reconvert_star, reconvert_pred]
+    rw [Ere.lang_pred_top_star, Ere.lang_pred_bot]
+    exact compl_bot.symm
+  · by_cases ht : a = (pred ⊤)★ₙ
+    · subst ht
+      simp only [mkNeg_topStar, reconvert_pred, reconvert_star]
+      rw [Ere.lang_pred_top_star, Ere.lang_pred_bot]
+      exact compl_top.symm
+    · rw [mkNeg_eq_neg hb ht, reconvert_neg]
+      rfl
 
 /-- `normalise` does not change the language. -/
 theorem lang_normalise (r : Ere α) : (normalise r).lang = (r.lang : Language σ) := by
@@ -98,7 +130,9 @@ theorem lang_normalise (r : Ere α) : (normalise r).lang = (r.lang : Language σ
     simp only [normalise]
     rw [lang_mkCat, ihl, ihr]; rfl
   | star r ih => simp only [normalise, lang_star, ih, Ere.lang]
-  | negation r ih => simp only [normalise, lang_neg, ih, Ere.lang]
+  | negation r ih =>
+    simp only [normalise]
+    rw[lang_mkNeg, ih, Ere.lang]
   | xor l r ihl ihr => simp only [normalise, lang_xor, ihl, ihr, Ere.lang]
 
 /-- The pointwise form of `lang_normalise`. -/

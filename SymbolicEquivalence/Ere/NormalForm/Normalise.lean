@@ -10,7 +10,7 @@ normalising simplifies more than `≅` allows.
 -/
 open scoped Ere
 
-variable {α : Type*} [Bot α] [DecidableEq α]
+variable {α : Type*} [Bot α] [Top α] [DecidableEq α]
 open EreNorm
 
 namespace EreNorm
@@ -23,7 +23,7 @@ def normalise (r : Ere α) : EreNorm α :=
   | l ⋒ r   => mkInter (normalise l) (normalise r)
   | l ⬝ r   => mkCat (normalise l) (normalise r)
   | r★     => (normalise r)★ₙ
-  | ~ r     => ~ₙ (normalise r)
+  | ~ r     => mkNeg (normalise r)
   | .xor l r => .xor (normalise l) (normalise r)
 
 theorem wellFormed_of_normalise (r : Ere α) : WellFormed (normalise r) :=
@@ -36,7 +36,7 @@ theorem wellFormed_of_normalise (r : Ere α) : WellFormed (normalise r) :=
   | l ⬝ r =>
     wellFormed_mkCat (wellFormed_of_normalise l) (wellFormed_of_normalise r)
   | r★ => .star (wellFormed_of_normalise r)
-  | ~ r => .negation (wellFormed_of_normalise r)
+  | ~ r => wellFormed_mkNeg (wellFormed_of_normalise r)
   | .xor l r => .xor (wellFormed_of_normalise l) (wellFormed_of_normalise r)
 
 /-- `normalise` maps similar expressions to the same normal form. -/

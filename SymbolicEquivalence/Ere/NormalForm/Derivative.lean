@@ -56,7 +56,7 @@ theorem nullable_toList (r : EreNorm α) : nullable r = (toList r).any nullable 
 
 section Bridge
 
-variable [Bot α]
+variable [Bot α] [Top α]
 
 mutual
 
@@ -90,7 +90,7 @@ end Bridge
 
 section Null
 
-variable [Bot α] [DecidableEq α]
+variable [Bot α] [Top α] [DecidableEq α]
 
 /-- `a ⋓' b` is nullable exactly when `a` or `b` is. -/
 theorem nullable_mkUnion {a b : EreNorm α} (ha : WellFormed a) :
@@ -99,7 +99,11 @@ theorem nullable_mkUnion {a b : EreNorm α} (ha : WellFormed a) :
   · subst hna; simp [nullable]
   by_cases hnb : b = pred ⊥
   · subst hnb; simp [nullable]
-  rw [nullable_toList (a ⋓' b), toList_mkUnion ha hna hnb, any_smartDedup,
+  by_cases hta : a = (pred ⊤)★ₙ
+  · subst hta; simp [nullable]
+  by_cases htb : b = (pred ⊤)★ₙ
+  · subst htb; simp [nullable]
+  rw [nullable_toList (a ⋓' b), toList_mkUnion ha hna hnb hta htb, any_smartDedup,
     List.any_append, ← nullable_toList, ← nullable_toList]
 
 /-- `mkCat A B` is nullable exactly when both `A` and `B` are. -/
@@ -122,7 +126,19 @@ theorem nullable_mkInter (A B : EreNorm α) :
   · simp [bl, nullable]
   by_cases br : B = pred ⊥
   · simp [br, nullable]
-  rw [mkInter_eq_inter bl br, nullable]
+  by_cases tl : A = (pred ⊤)★ₙ
+  · simp [tl, nullable]
+  by_cases tr : B = (pred ⊤)★ₙ
+  · simp [tr, nullable]
+  rw [mkInter_eq_inter bl br tl tr, nullable]
+
+/-- `mkNeg A` is nullable exactly when `A` is not. -/
+theorem nullable_mkNeg (A : EreNorm α) : nullable (mkNeg A) = !nullable A := by
+  by_cases hb : A = pred ⊥
+  · simp [hb, nullable]
+  by_cases ht : A = (pred ⊤)★ₙ
+  · subst ht; simp[nullable]
+  · rw [mkNeg_eq_neg hb ht, nullable]
 
 /-- `normalise` preserves nullability. -/
 theorem nullable_normalise (e : Ere α) : nullable (normalise e) = e.nullable := by
@@ -133,6 +149,7 @@ theorem nullable_normalise (e : Ere α) : nullable (normalise e) = e.nullable :=
     simp
   | intersection l r ihl ihr => simp only [normalise, nullable_mkInter, ihl, ihr, Ere.nullable]
   | concatenation l r ihl ihr => simp only [normalise, nullable_mkCat, ihl, ihr, Ere.nullable]
+  | negation r ih => simp only [normalise, nullable_mkNeg, ih, Ere.nullable]
   | _ => simp_all [normalise, nullable]
 
 end Null
@@ -158,7 +175,7 @@ def derivative : EreNorm α → TTerm α (EreNorm α)
     else
       liftUnary (mkCat · r) (derivative l)
   | r★ₙ => liftUnary (mkCat · r★ₙ) (derivative r)
-  | ~ₙ r => liftUnary (~ₙ ·) (derivative r)
+  | ~ₙ r => liftUnary mkNeg (derivative r)
   | .xor l r => liftBinaryR .xor (derivative l) (derivative r)
 termination_by r => sizeOf r
 
@@ -211,7 +228,7 @@ theorem derivative_eval_wf {r : EreNorm α} (h : WellFormed r) (a : σ) :
     exact wellFormed_mkCat (derivative_eval_wf hr a) (.star hr)
   | ~ₙ r, .negation hr =>
     simp only [derivative, eval_liftUnary]
-    exact .negation (derivative_eval_wf hr a)
+    exact wellFormed_mkNeg (derivative_eval_wf hr a)
   | .xor l r, .xor hl hr =>
     simp only [derivative, eval_liftBinaryR]
     exact .xor (derivative_eval_wf hl a) (derivative_eval_wf hr a)
@@ -255,6 +272,10 @@ theorem derivative_mkUnion {a b : EreNorm α} (ha : WellFormed a) (hb : WellForm
   · subst hna; simp [derivative]
   by_cases hnb : b = pred ⊥
   · subst hnb; simp [derivative]
+  by_cases hta : a = (pred ⊤)★ₙ
+  · subst hta; simp [derivative]
+  by_cases htb : b = (pred ⊤)★ₙ
+  · subst htb; simp [derivative]
   have hwf : ∀ w ∈ toList a ++ toList b, WellFormed ((ρₙ w)[c]) := fun w hw =>
     derivative_eval_wf (mem_toList_append ha hb hw).1 c
   have hwf_a : ∀ x ∈ (toList a).map (fun w => (ρₙ w)[c]), WellFormed x := by
@@ -262,7 +283,7 @@ theorem derivative_mkUnion {a b : EreNorm α} (ha : WellFormed a) (hb : WellForm
     obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hx
     exact hwf w (List.mem_append_left _ hw)
   -- The derivative of a union is the union of the derivatives of its operands
-  rw [eval_derivative_toList (a ⋓' b), toList_mkUnion ha hna hnb]
+  rw [eval_derivative_toList (a ⋓' b), toList_mkUnion ha hna hnb hta htb]
   -- Removing duplicate operands does not change the union
   rw [unionAll_map_smartDedup _ _ hwf]
   -- Split the operands into those of `a` and those of `b`
@@ -276,7 +297,20 @@ theorem derivative_mkInter (A B : EreNorm α) (c : σ) :
   · subst bl; simp [derivative]
   by_cases br : B = pred ⊥
   · subst br; simp [derivative]
-  rw [mkInter_eq_inter bl br, derivative, eval_liftBinaryR]
+  by_cases tl : A = (pred ⊤)★ₙ
+  · subst tl; simp [derivative]
+  by_cases tr : B = (pred ⊤)★ₙ
+  · subst tr; simp [derivative]
+  rw [mkInter_eq_inter bl br tl tr, derivative, eval_liftBinaryR]
+
+/-- The derivative of `mkNeg A` is the smart negation of its derivative. -/
+theorem derivative_mkNeg (A : EreNorm α) (c : σ) :
+    (ρₙ (mkNeg A))[c] = mkNeg ((ρₙ A)[c]) := by
+  by_cases bl : A = pred ⊥
+  · subst bl; simp [derivative]
+  by_cases br : A = (pred ⊤)★ₙ
+  · subst br; simp [derivative]
+  rw [mkNeg_eq_neg bl br, derivative, eval_liftUnary]
 
 /-- The derivative of `mkCat A B` follows the concatenation rule with smart constructors.
     The `A = ε` case needs `mkUnion_bot_left`. -/
@@ -321,7 +355,9 @@ theorem derivative_normalise (y : Ere α) (c : σ) :
     · rw [ite_eq_right h, Ere.derivative, ite_eq_right h]
       simp only [eval_liftUnary, normalise, ihl]
   | star r ih => simp only [normalise, derivative, Ere.derivative, eval_liftUnary, ih]
-  | negation r ih => simp only [normalise, derivative, Ere.derivative, eval_liftUnary, ih]
+  | negation r ih =>
+    simp only [normalise, Ere.derivative, eval_liftUnary]
+    rw [derivative_mkNeg, ih]
   | xor l r ihl ihr =>
     simp only [normalise, derivative, Ere.derivative, eval_liftBinary, eval_liftBinaryR, ihl, ihr]
 

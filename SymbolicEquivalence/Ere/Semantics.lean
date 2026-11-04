@@ -76,6 +76,19 @@ theorem not_mem_lang_pred_bot {x : List σ} : x ∉ (Ere.lang (pred (⊥ : α)) 
 theorem lang_pred_bot : (Ere.lang (Ere.pred (⊥ : α)) : Language σ) = 0 :=
   Set.eq_empty_iff_forall_notMem.mpr fun _ => not_mem_lang_pred_bot
 
+/-- Every word matches `(pred ⊤)★`. -/
+theorem lang_pred_top_star : (Ere.lang ((Ere.pred (⊤ : α))★) : Language σ) = ⊤ := by
+  -- every word is the concatenation of its one-letter words
+  refine top_unique fun w h => Language.mem_kstar.mpr ⟨w.map (fun c => [c]), ?_, ?_⟩
+  · clear h
+    induction w with
+    | nil => rfl
+    | cons c w ih => exact congrArg (c :: ·) ih
+  · -- each one-letter word matches `pred ⊤`
+    simp only [List.mem_map]
+    rintro _ ⟨c, -, rfl⟩
+    exact ⟨c, rfl, by simp⟩
+
 theorem lang_eps : (Ere.lang (Ere.ε : Ere α) : Language σ) = 1 := rfl
 
 /-- Similar expressions denote the same language. -/

@@ -35,7 +35,7 @@ theorem toList_mkUnionOf {x : EreNorm α} (xs : List (EreNorm α)) (h : isUnion 
     toList (mkUnionOf x xs) = smartDedup (x :: xs) := by
   rw [mkUnionOf, toList_fromList h, ← smartDedup_cons]
 
-variable [Bot α]
+variable [Bot α] [Top α]
 
 /-- Smart union returns the other operand if one is `⊥` and merges the operand lists otherwise.
 
@@ -45,6 +45,8 @@ variable [Bot α]
 def mkUnion (A B : EreNorm α) : EreNorm α :=
   if A = pred ⊥ then B
   else if B = pred ⊥ then A
+  else if A = (pred ⊤)★ₙ then A
+  else if B = (pred ⊤)★ₙ then B
   else mkUnionOf A.first (A.rest ++ toList B)
 
 scoped infixr:65 " ⋓' " => mkUnion
@@ -55,10 +57,17 @@ scoped infixr:65 " ⋓' " => mkUnion
 @[simp] theorem mkUnion_bot_right (A : EreNorm α) : (A ⋓' pred ⊥) = A := by
   by_cases h : A = pred ⊥ <;> simp [mkUnion, h]
 
+@[simp] theorem mkUnion_topStar_left (B : EreNorm α) : ((pred ⊤)★ₙ ⋓' B) = (pred ⊤)★ₙ := by
+  by_cases h : B = pred ⊥ <;> simp [mkUnion, h]
+
+@[simp] theorem mkUnion_topStar_right (A : EreNorm α) : (A ⋓' (pred ⊤)★ₙ) = (pred ⊤)★ₙ := by
+  by_cases h : A = pred ⊥ <;> simp [mkUnion, h]
+
 /-- If neither operand is `⊥`, `A ⋓' B` merges their operand lists. -/
-theorem mkUnion_of_ne_bot {A B : EreNorm α} (ha : A ≠ pred ⊥) (hb : B ≠ pred ⊥) :
+theorem mkUnion_of_ne_bot {A B : EreNorm α} (ha : A ≠ pred ⊥) (hb : B ≠ pred ⊥)
+    (hta : A ≠ (pred ⊤)★ₙ) (htb : B ≠ (pred ⊤)★ₙ) :
     (A ⋓' B) = mkUnionOf A.first (A.rest ++ toList B) := by
-  simp [mkUnion, ha, hb]
+  simp [mkUnion, ha, hb, hta, htb]
 
 theorem wellFormed_mkUnion {A B : EreNorm α} (ha : WellFormed A) (hb : WellFormed B) :
     WellFormed (A ⋓' B) := by
@@ -66,7 +75,11 @@ theorem wellFormed_mkUnion {A B : EreNorm α} (ha : WellFormed A) (hb : WellForm
   · subst hna; simpa
   by_cases hnb : B = pred ⊥
   · subst hnb; simpa
-  rw [mkUnion_of_ne_bot hna hnb]
+  by_cases hta : A = (pred ⊤)★ₙ
+  · simpa [mkUnion, hna, hnb, hta] using ha
+  by_cases htb : B = (pred ⊤)★ₙ
+  · simpa [mkUnion, hna, hnb, hta, htb] using hb
+  rw [mkUnion_of_ne_bot hna hnb hta htb]
   exact wellFormed_mkUnionOf
     (fun w hw => (mem_toList_append ha hb hw).1)
     (fun w hw => (mem_toList_append ha hb hw).2)
@@ -74,19 +87,18 @@ theorem wellFormed_mkUnion {A B : EreNorm α} (ha : WellFormed A) (hb : WellForm
 /-- If neither operand is `⊥`, the operands of `a ⋓' b` are those of `a` and `b` without
     duplicates. -/
 theorem toList_mkUnion {a b : EreNorm α} (ha : WellFormed a)
-    (hna : a ≠ pred ⊥) (hnb : b ≠ pred ⊥) :
+    (hna : a ≠ pred ⊥) (hnb : b ≠ pred ⊥) (hta : a ≠ (pred ⊤)★ₙ) (htb : b ≠ (pred ⊤)★ₙ) :
     toList (a ⋓' b) = smartDedup (toList a ++ toList b) := by
-  rw [mkUnion_of_ne_bot hna hnb,
+  rw [mkUnion_of_ne_bot hna hnb hta htb,
     toList_mkUnionOf _ (toList_not_isUnion ha _ (by simp [toList])), toList_append_eq]
 
-/-- If `a` is not `⊥`, neither is `a ⋓' b`. -/
-theorem mkUnion_ne_bot {a b : EreNorm α} (ha : WellFormed a) (hna : a ≠ pred ⊥) :
-    (a ⋓' b) ≠ pred ⊥ := by
-  by_cases hnb : b = pred ⊥
-  · rw [hnb, mkUnion_bot_right _]; exact hna
+/-- If the operand lists are merged, the result is not a non-union `v` other than `a`. -/
+private theorem mkUnion_ne_of_merge {a b v : EreNorm α} (ha : WellFormed a)
+    (hv : isUnion v = false) (hav : a ≠ v) (hna : a ≠ pred ⊥) (hnb : b ≠ pred ⊥)
+    (hta : a ≠ (pred ⊤)★ₙ) (htb : b ≠ (pred ⊤)★ₙ) : (a ⋓' b) ≠ v := by
   intro h
-  have hl := toList_mkUnion ha hna hnb
-  rw [h, toList_eq_self (by simp), toList_append_eq, smartDedup_cons] at hl
+  have hl := toList_mkUnion ha hna hnb hta htb
+  rw [h, toList_eq_self hv, toList_append_eq, smartDedup_cons] at hl
   obtain ⟨h1, h2⟩ := List.cons_eq_cons.mp hl
   cases a with
   | union x y zs =>
@@ -97,13 +109,35 @@ theorem mkUnion_ne_bot {a b : EreNorm α} (ha : WellFormed a) (hna : a ≠ pred 
     simp only [EreNorm.first, EreNorm.rest] at h2
     rw [← h2] at hy
     simp at hy
-  | _ => exact hna h1.symm
+  | _ => exact hav h1.symm
+
+/-- If `a` is not `⊥`, neither is `a ⋓' b`. -/
+theorem mkUnion_ne_bot {a b : EreNorm α} (ha : WellFormed a) (hna : a ≠ pred ⊥) :
+    (a ⋓' b) ≠ pred ⊥ := by
+  by_cases hnb : b = pred ⊥
+  · rw [hnb, mkUnion_bot_right _]; exact hna
+  by_cases hta : a = (pred ⊤)★ₙ
+  · simp [hta]
+  by_cases htb : b = (pred ⊤)★ₙ
+  · simp [htb]
+  exact mkUnion_ne_of_merge ha (by simp) hna hna hnb hta htb
+
+/-- If neither `a` nor `b` is `⊤*`, neither is `a ⋓' b`. -/
+theorem mkUnion_ne_topStar {a b : EreNorm α} (ha : WellFormed a)
+    (hta : a ≠ (pred ⊤)★ₙ) (htb : b ≠ (pred ⊤)★ₙ) : (a ⋓' b) ≠ (pred ⊤)★ₙ := by
+  by_cases hna : a = pred ⊥
+  · simpa [hna] using htb
+  by_cases hnb : b = pred ⊥
+  · simpa [hnb] using hta
+  exact mkUnion_ne_of_merge ha (by simp) hta hna hnb hta htb
 
 theorem mkUnion_idem {a : EreNorm α} (h : WellFormed a) : (a ⋓' a) = a := by
   by_cases hna : a = pred ⊥
   · rw [hna, mkUnion_bot_left]
+  by_cases hta : a = (pred ⊤)★ₙ
+  · rw [hta, mkUnion_topStar_left]
   · exact eq_of_toList_eq
-      (by rw [toList_mkUnion h hna hna, smartDedup_append_self (toList_nodup h)])
+      (by rw [toList_mkUnion h hna hna hta hta, smartDedup_append_self (toList_nodup h)])
 
 theorem mkUnion_dedup {a b : EreNorm α} (ha : WellFormed a) (hb : WellFormed b) :
     ((a ⋓' b) ⋓' a) = a ⋓' b := by
@@ -111,12 +145,18 @@ theorem mkUnion_dedup {a b : EreNorm α} (ha : WellFormed a) (hb : WellFormed b)
   · subst hna; simp
   by_cases hnb : b = pred ⊥
   · subst hnb; simp [mkUnion_idem ha]
+  by_cases hta : a = (pred ⊤)★ₙ
+  · simp [hta]
+  by_cases htb : b = (pred ⊤)★ₙ
+  · simp [htb]
   have hab : WellFormed (a ⋓' b) := wellFormed_mkUnion ha hb
   have hnab : (a ⋓' b) ≠ pred ⊥ := mkUnion_ne_bot ha hna
+  have htab : (a ⋓' b) ≠ (pred ⊤)★ₙ := mkUnion_ne_topStar ha hta htb
   have hsub : ∀ x ∈ toList a, x ∈ toList (a ⋓' b) := fun x hx => by
-    rw [toList_mkUnion ha hna hnb, mem_smartDedup_iff]; exact List.mem_append_left _ hx
+    rw [toList_mkUnion ha hna hnb hta htb, mem_smartDedup_iff]; exact List.mem_append_left _ hx
   exact eq_of_toList_eq
-    (by rw [toList_mkUnion hab hnab hna, smartDedup_append_subset (toList_nodup hab) hsub])
+    (by rw [toList_mkUnion hab hnab hna htab hta,
+      smartDedup_append_subset (toList_nodup hab) hsub])
 
 /-- `⋓'` is associative when `a` and `b` are well-formed. -/
 theorem mkUnion_assoc {a b c : EreNorm α} (ha : WellFormed a) (hb : WellFormed b) :
@@ -127,11 +167,18 @@ theorem mkUnion_assoc {a b c : EreNorm α} (ha : WellFormed a) (hb : WellFormed 
   · subst hnb; simp
   by_cases hnc : c = pred ⊥
   · subst hnc; simp
+  by_cases hta : a = (pred ⊤)★ₙ
+  · simp [hta]
+  by_cases htb : b = (pred ⊤)★ₙ
+  · simp [htb]
+  by_cases htc : c = (pred ⊤)★ₙ
+  · simp [htc]
   apply eq_of_toList_eq
-  rw [toList_mkUnion (wellFormed_mkUnion ha hb) (mkUnion_ne_bot ha hna) hnc,
-    toList_mkUnion ha hna hnb,
-    toList_mkUnion ha hna (mkUnion_ne_bot hb hnb), toList_mkUnion hb hnb hnc,
-    smartDedup_assoc]
+  rw [toList_mkUnion (wellFormed_mkUnion ha hb) (mkUnion_ne_bot ha hna) hnc
+      (mkUnion_ne_topStar ha hta htb) htc,
+    toList_mkUnion ha hna hnb hta htb,
+    toList_mkUnion ha hna (mkUnion_ne_bot hb hnb) hta (mkUnion_ne_topStar hb htb htc),
+    toList_mkUnion hb hnb hnc htb htc, smartDedup_assoc]
 
 /-- Right deduplication, nested as in `Sim.dedup`. -/
 theorem mkUnion_right_dedup {a b : EreNorm α} (ha : WellFormed a) (hb : WellFormed b) :

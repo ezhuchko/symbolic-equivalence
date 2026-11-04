@@ -52,15 +52,15 @@ def reconvert : EreNorm α → Ere α
     unionOf ((toList r).map reconvert) = reconvert r := by
   rw [toList, ← reconvert_fromList, fromList_toList]
 
-variable [DecidableEq α]
+variable [Top α] [DecidableEq α]
 
 /-- If neither operand is `⊥`, `mkUnion` only reassociates and deletes repeated operands, so
     the result is `≅` to the plain union. -/
 theorem reconvert_mkUnion_of_ne_bot {a b : EreNorm α}
-    (hna : a ≠ pred ⊥) (hnb : b ≠ pred ⊥) :
+    (hna : a ≠ pred ⊥) (hnb : b ≠ pred ⊥) (hta : a ≠ (pred ⊤)★ₙ) (htb : b ≠ (pred ⊤)★ₙ) :
     reconvert (a ⋓' b) ≅ (reconvert a ⋓ reconvert b) := by
   have h1 : reconvert (a ⋓' b) = unionOf ((smartDedup (toList a ++ toList b)).map reconvert) := by
-    simp only [mkUnion_of_ne_bot hna hnb, mkUnionOf, reconvert_fromList,
+    simp only [mkUnion_of_ne_bot hna hnb hta htb, mkUnionOf, reconvert_fromList,
       ← smartDedup_cons, toList_append_eq]
   rw [h1]
   refine .trans (unionOf_map_smartDedup reconvert _) ?_
