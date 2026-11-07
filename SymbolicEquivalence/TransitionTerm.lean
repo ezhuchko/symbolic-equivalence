@@ -219,6 +219,18 @@ theorem leaves_restrict_subset (f : TTerm α β) (ψ : α) : leaves (f.restrict 
     · exact hl _
     · exact hr _
 
+/-- Pruning only deletes leaves, keeping the rest in order. -/
+theorem leaves_restrict_sublist (f : TTerm α β) (ψ : α) :
+    (f.restrict ψ).leaves.Sublist f.leaves := by
+  induction f generalizing ψ with
+  | leaf b => simp [restrict]
+  | node p l r ihl ihr =>
+    simp only [restrict, leaves_node]
+    split_ifs
+    · exact (ihl _).append (ihr _)
+    · exact (ihl _).trans (List.sublist_append_left _ _)
+    · exact (ihr _).trans (List.sublist_append_right _ _)
+
 /-! ### `bindR`: prune while grafting -/
 
 /-- Bind under a guard `ψ`, dropping infeasible branches during construction rather than
@@ -281,6 +293,13 @@ theorem reachableLeaves_subset (f : TTerm α β) (ψ : α) : reachableLeaves f �
   split
   · exact leaves_restrict_subset f ψ
   · exact List.nil_subset _
+
+theorem reachableLeaves_sublist (f : TTerm α β) (ψ : α) :
+    (reachableLeaves f ψ).Sublist f.leaves := by
+  unfold reachableLeaves
+  split
+  · exact leaves_restrict_sublist f ψ
+  · exact List.nil_sublist _
 
 /-- Every leaf of `f.restrict ψ` is reached by some character satisfying `ψ`. -/
 private theorem mem_leaves_restrict_of {f : TTerm α β} {ψ : α} {x : β}

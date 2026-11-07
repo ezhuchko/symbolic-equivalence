@@ -65,6 +65,16 @@ theorem Reach.fst {s t : β₁ × β₂} (h : (prod D₁ D₂).Reach s t) : D₁
 theorem Reach.snd {s t : β₁ × β₂} (h : (prod D₁ D₂).Reach s t) : D₂.Reach s.2 t.2 :=
   let ⟨v, _, h2⟩ := prod_reach.mp h; ⟨v, h2⟩
 
+/-! ### Successors -/
+
+/-- A pair has at most `n · m` successors, where `n` and `m` are the leaf counts of the
+    two derivatives. -/
+theorem length_succs_prod_le [DecidableSat α] (t : β₁ × β₂) :
+    ((prod D₁ D₂).succs t).length
+      ≤ (D₁.symDer t.1).leaves.length * (D₂.symDer t.2).leaves.length := by
+  rw [← length_leaves_binary Prod.mk]
+  exact (reachableLeaves_sublist _ _).length_le
+
 end Prod
 
 /-! ### Pairs reachable from `(p₀, q₀)` -/
