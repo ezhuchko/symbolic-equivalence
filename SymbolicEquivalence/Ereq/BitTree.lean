@@ -74,6 +74,10 @@ namespace BitTree
 def liftUnaryNorm (op : L → L') (f : BitTree α n L) : BitTree α n L' :=
   liftUnary (liftUnary op) f
 
+theorem eval_liftUnaryNorm (op : L → L') (f : BitTree α n L) (x : Elem σ n) :
+    (liftUnaryNorm op f)[x]ₙ = op (f[x]ₙ) := by
+  simp only [liftUnaryNorm, evaluation₂, eval_liftUnary]
+
 section
 variable [DecidableSat α]
 
@@ -137,11 +141,6 @@ theorem ordered_liftUProj (cup : L' → L' → L') (op : L → L') :
         (below_liftUProj cup op hk bl) (below_liftUProj cup op hk br)
 
 /-! ### The lifted operators commute with evaluation -/
-
-omit [DecidableSat α] in
-theorem eval_liftUnaryNorm (op : L → L') (f : BitTree α n L) (x : Elem σ n) :
-    (liftUnaryNorm op f)[x]ₙ = op (f[x]ₙ) := by
-  simp only [liftUnaryNorm, evaluation₂, eval_liftUnary]
 
 theorem eval_liftBinaryNorm (op : L → L → L') (f g : BitTree α n L) (x : Elem σ n) :
     (liftBinaryNorm op f g)[x]ₙ = op (f[x]ₙ) (g[x]ₙ) := by

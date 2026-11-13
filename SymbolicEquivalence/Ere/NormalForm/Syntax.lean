@@ -114,6 +114,12 @@ theorem eq_of_toList_eq {r s : EreNorm α} (h : toList r = toList s) : r = s := 
   injection h with h1 h2
   rw [← fromList_toList r, ← fromList_toList s, h1, h2]
 
+theorem ne_neg_neg (A : EreNorm α) : A ≠ ~ₙ~ₙA := by
+  intro h
+  have := congrArg sizeOf h
+  simp at this
+  omega
+
 /-! ### Well-formed normal forms -/
 
 /-- A normal form has no duplicate operands and no union directly inside a union,

@@ -56,7 +56,7 @@ theorem nullable_toList (r : EreNorm α) : nullable r = (toList r).any nullable 
 
 section Bridge
 
-variable [Bot α] [Top α]
+variable [Bot α]
 
 mutual
 
@@ -90,7 +90,22 @@ end Bridge
 
 section Null
 
-variable [Bot α] [Top α] [DecidableEq α]
+variable [Bot α] [DecidableEq α]
+
+/-- `mkCat A B` is nullable exactly when both `A` and `B` are. -/
+theorem nullable_mkCat (A B : EreNorm α) :
+    nullable (mkCat A B) = (nullable A && nullable B) := by
+  by_cases bl : A = pred ⊥
+  · simp [bl, nullable]
+  by_cases br : B = pred ⊥
+  · simp [br, nullable]
+  by_cases el : A = ε
+  · simp [el, nullable]
+  by_cases er : B = ε
+  · simp [er, nullable]
+  rw [mkCat_eq_cat bl br el er, nullable]
+
+variable [Top α]
 
 /-- `a ⋓' b` is nullable exactly when `a` or `b` is. -/
 theorem nullable_mkUnion {a b : EreNorm α} (ha : WellFormed a) :
@@ -106,19 +121,6 @@ theorem nullable_mkUnion {a b : EreNorm α} (ha : WellFormed a) :
   rw [nullable_toList (a ⋓' b), toList_mkUnion ha hna hnb hta htb, any_smartDedup,
     List.any_append, ← nullable_toList, ← nullable_toList]
 
-/-- `mkCat A B` is nullable exactly when both `A` and `B` are. -/
-theorem nullable_mkCat (A B : EreNorm α) :
-    nullable (mkCat A B) = (nullable A && nullable B) := by
-  by_cases bl : A = pred ⊥
-  · simp [bl, nullable]
-  by_cases br : B = pred ⊥
-  · simp [br, nullable]
-  by_cases el : A = ε
-  · simp [el, nullable]
-  by_cases er : B = ε
-  · simp [er, nullable]
-  rw [mkCat_eq_cat bl br el er, nullable]
-
 /-- `mkInter A B` is nullable exactly when both `A` and `B` are. -/
 theorem nullable_mkInter (A B : EreNorm α) :
     nullable (mkInter A B) = (nullable A && nullable B) := by
@@ -130,7 +132,11 @@ theorem nullable_mkInter (A B : EreNorm α) :
   · simp [tl, nullable]
   by_cases tr : B = (pred ⊤)★ₙ
   · simp [tr, nullable]
-  rw [mkInter_eq_inter bl br tl tr, nullable]
+  by_cases nl : B = ~ₙA
+  · subst nl; simp [mkInter_neg_right tl, nullable]
+  by_cases nr : A = ~ₙB
+  · subst nr; simp [mkInter_neg_left tr, nullable]
+  rw [mkInter_eq_inter bl br tl tr nl nr, nullable]
 
 /-- `mkNeg A` is nullable exactly when `A` is not. -/
 theorem nullable_mkNeg (A : EreNorm α) : nullable (mkNeg A) = !nullable A := by
@@ -301,7 +307,11 @@ theorem derivative_mkInter (A B : EreNorm α) (c : σ) :
   · subst tl; simp [derivative]
   by_cases tr : B = (pred ⊤)★ₙ
   · subst tr; simp [derivative]
-  rw [mkInter_eq_inter bl br tl tr, derivative, eval_liftBinaryR]
+  by_cases nl : B = ~ₙA
+  · subst nl; simp [mkInter_neg_right tl, derivative, mkInter_mkNeg_right]
+  by_cases nr : A = ~ₙB
+  · subst nr; simp [mkInter_neg_left tr, derivative, mkInter_mkNeg_left]
+  rw [mkInter_eq_inter bl br tl tr nl nr, derivative, eval_liftBinaryR]
 
 /-- The derivative of `mkNeg A` is the smart negation of its derivative. -/
 theorem derivative_mkNeg (A : EreNorm α) (c : σ) :

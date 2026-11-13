@@ -41,7 +41,19 @@ def Ereq.system (α σ : Type*) (n : Nat) [EffectiveBooleanAlgebra α σ] [Decid
     rw [flatten₂_eval]
     exact EreqNorm.deriv_iff_normalise e c w
 
-variable [DecidableSat α] [DecidableEq α]
+variable [DecidableEq α]
+
+/-- The normal form of `p.nnf` has the same language as `p`. -/
+theorem Ereq.lang_normalise_nnf (p : Ereq α n) :
+    ((normalise p.nnf).lang : Language (Elem σ n)) = p.lang := by
+  rw [EreqNorm.lang_normalise, Ereq.lang_nnf]
+
+/-- The pointwise form of `Ereq.lang_normalise_nnf`. -/
+theorem Ereq.matches_normalise_nnf (p : Ereq α n) (w : Word σ n) :
+    w ∈ (normalise p.nnf).lang ↔ w ⊫ p :=
+  Language.ext_iff.mp (Ereq.lang_normalise_nnf p) w
+
+variable [DecidableSat α]
 
 /-- The normal form of an expression is a well-formed state of `Ereq.system`. -/
 theorem Ereq.system_wf (p : Ereq α n) : (Ereq.system α σ n).WF (normalise p.nnf) :=
@@ -75,18 +87,6 @@ def Ereq.decideEquiv [Hashable α] (p q : Ereq α n) : Bool :=
     (Ereq.system_wf p) (Ereq.system_wf q)
 
 /-! ### Correctness -/
-
-omit [DecidableSat α] in
-/-- The normal form of `p.nnf` has the same language as `p`. -/
-theorem Ereq.lang_normalise_nnf (p : Ereq α n) :
-    ((normalise p.nnf).lang : Language (Elem σ n)) = p.lang := by
-  rw [EreqNorm.lang_normalise, Ereq.lang_nnf]
-
-omit [DecidableSat α] in
-/-- The pointwise form of `Ereq.lang_normalise_nnf`. -/
-theorem Ereq.matches_normalise_nnf (p : Ereq α n) (w : Word σ n) :
-    w ∈ (normalise p.nnf).lang ↔ w ⊫ p :=
-  Language.ext_iff.mp (Ereq.lang_normalise_nnf p) w
 
 /-- The checker decides language equality. -/
 theorem Ereq.decideEquiv_eq_true_iff [Hashable α] (p q : Ereq α n) :

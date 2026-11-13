@@ -17,12 +17,44 @@ denotes `1`.
 variable {α σ : Type*} [EffectiveBooleanAlgebra α σ]
 open scoped Ere EreNorm Computability
 
+/-- A word is in the language of `unionOf es` exactly when it is in the language of some
+    member of `es`. -/
+theorem Ere.mem_lang_unionOf {w : List σ} :
+    ∀ es : List (Ere α), w ∈ (Ere.unionOf es).lang ↔ ∃ e ∈ es, w ∈ e.lang
+  | [] => by simp [Ere.lang_pred_bot]
+  | [a] => by simp
+  | a :: b :: bs => by
+    rw [Ere.unionOf_cons _ (List.cons_ne_nil b bs)]
+    simp only [Ere.lang, Language.mem_add, Ere.mem_lang_unionOf (b :: bs), List.mem_cons]
+    constructor
+    · rintro (h | ⟨e, he, hw⟩)
+      · exact ⟨a, Or.inl rfl, h⟩
+      · exact ⟨e, Or.inr he, hw⟩
+    · rintro ⟨e, (rfl | he), hw⟩
+      · exact Or.inl hw
+      · exact Or.inr ⟨e, he, hw⟩
+
 namespace EreNorm
 
 /-! ## The language of a normal form -/
 
 /-- The language of a normal form is the language of the `Ere` it stands for. -/
 def lang (s : EreNorm α) : Language σ := (reconvert s).lang
+
+theorem lang_ε : ((ε : EreNorm α).lang : Language σ) = 1 := by
+  simp only [EreNorm.lang, reconvert_ε, Ere.lang]
+
+theorem lang_cat (l r : EreNorm α) : ((l ⬝ₙ r).lang : Language σ) = l.lang * r.lang := by
+  simp only [EreNorm.lang, reconvert_cat, Ere.lang]
+
+/-- A word is in the language of a union exactly when it is in the language of one of its
+    operands. -/
+theorem mem_lang_union {w : List σ} (x y : EreNorm α) (zs : List (EreNorm α)) :
+    w ∈ (⋃ₙ[x, y | zs].lang : Language σ) ↔ ∃ e ∈ x :: y :: zs, w ∈ (e.lang : Language σ) := by
+  simp only [EreNorm.lang, reconvert_union, Ere.mem_lang_unionOf, List.mem_map]
+  constructor
+  · rintro ⟨_, ⟨e, he, rfl⟩, hw⟩; exact ⟨e, he, hw⟩
+  · rintro ⟨e, he, hw⟩; exact ⟨_, ⟨e, he, rfl⟩, hw⟩
 
 theorem lang_star (s : EreNorm α) : (s★ₙ).lang = ((s.lang : Language σ))∗ := by
   simp only [EreNorm.lang, reconvert_star, Ere.lang]
@@ -96,7 +128,15 @@ theorem lang_mkInter (a b : EreNorm α) :
   · subst tr
     rw [mkInter_topStar_right, reconvert_star, reconvert_pred, Ere.lang_pred_top_star]
     exact (inf_top_eq _).symm
-  rw [mkInter_eq_inter bl br tl tr, reconvert_inter]
+  by_cases nl : b = ~ₙa
+  · subst nl
+    rw [mkInter_neg_right tl, reconvert_pred, Ere.lang_pred_bot, reconvert_neg]
+    exact (Set.inter_compl_self _).symm
+  by_cases nr : a = ~ₙb
+  · subst nr
+    rw [mkInter_neg_left tr, reconvert_pred, Ere.lang_pred_bot, reconvert_neg]
+    exact (Set.compl_inter_self _).symm
+  rw [mkInter_eq_inter bl br tl tr nl nr, reconvert_inter]
   rfl
 
 /-- The language of `mkNeg a` is the complement of the language of `a`. -/

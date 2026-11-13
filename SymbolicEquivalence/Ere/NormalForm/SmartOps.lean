@@ -14,9 +14,11 @@ and well-formedness. Well-formedness is proved below, the rest in `Language` and
 -/
 open scoped Ere EreNorm
 
-variable {α : Type*} [Bot α] [Top α] [DecidableEq α]
+variable {α : Type*} [Bot α] [DecidableEq α]
 open EreNorm
 namespace EreNorm
+
+/-! ### Smart concatenation -/
 
 /-- Smart concatenation returns `⊥` if either operand is `⊥`, drops an `ε` operand, and
     concatenates otherwise. -/
@@ -26,16 +28,6 @@ def mkCat (A B : EreNorm α) : EreNorm α :=
   else if A = ε then B
   else if B = ε then A
   else A ⬝ₙ B
-
-/-- Smart intersection returns `⊥` if either operand is `⊥` and intersects otherwise. -/
-def mkInter (A B : EreNorm α) : EreNorm α :=
-  if A = pred ⊥ then pred ⊥
-  else if B = pred ⊥ then pred ⊥
-  else if A = (pred ⊤)★ₙ then B
-  else if B = (pred ⊤)★ₙ then A
-  else A ⋒ₙ B
-
-/-! ### Simplification laws -/
 
 @[simp] theorem mkCat_bot_left (B : EreNorm α) : mkCat (pred ⊥) B = pred ⊥ := by simp [mkCat]
 
@@ -47,6 +39,31 @@ def mkInter (A B : EreNorm α) : EreNorm α :=
 
 @[simp] theorem mkCat_eps_right (A : EreNorm α) : mkCat A ε = A := by
   by_cases h : A = pred ⊥ <;> by_cases h' : A = ε <;> simp_all [mkCat]
+
+/-- If neither operand is `⊥` or `ε`, `mkCat` is plain concatenation. -/
+theorem mkCat_eq_cat {A B : EreNorm α} (bl : A ≠ pred ⊥) (br : B ≠ pred ⊥)
+    (el : A ≠ ε) (er : B ≠ ε) : mkCat A B = (A ⬝ₙ B) := by
+  simp [mkCat, bl, br, el, er]
+
+theorem wellFormed_mkCat {A B : EreNorm α} (ha : WellFormed A) (hb : WellFormed B) :
+    WellFormed (mkCat A B) := by
+  unfold mkCat
+  split_ifs <;> first | exact .pred ⊥ | assumption | exact .concatenation ha hb
+
+/-! ### Smart intersection -/
+
+variable [Top α]
+
+/-- Smart intersection returns `⊥` if either operand is `⊥` or the negation of the other, and
+    intersects otherwise. -/
+def mkInter (A B : EreNorm α) : EreNorm α :=
+  if A = pred ⊥ then pred ⊥
+  else if B = pred ⊥ then pred ⊥
+  else if A = (pred ⊤)★ₙ then B
+  else if B = (pred ⊤)★ₙ then A
+  else if B = ~ₙA then pred ⊥
+  else if A = ~ₙB then pred ⊥
+  else A ⋒ₙ B
 
 @[simp] theorem mkInter_bot_left (B : EreNorm α) : mkInter (pred ⊥) B = pred ⊥ := by
   simp [mkInter]
@@ -60,21 +77,17 @@ def mkInter (A B : EreNorm α) : EreNorm α :=
 @[simp] theorem mkInter_topStar_right (A : EreNorm α) : mkInter A ((pred ⊤)★ₙ) = A := by
   by_cases h : A = pred ⊥ <;> by_cases h' : A = (pred ⊤)★ₙ <;> simp [mkInter, h, h']
 
-/-- If neither operand is `⊥` or `ε`, `mkCat` is plain concatenation. -/
-theorem mkCat_eq_cat {A B : EreNorm α} (bl : A ≠ pred ⊥) (br : B ≠ pred ⊥)
-    (el : A ≠ ε) (er : B ≠ ε) : mkCat A B = (A ⬝ₙ B) := by
-  simp [mkCat, bl, br, el, er]
+theorem mkInter_neg_right {A : EreNorm α} (tl : A ≠ (pred ⊤)★ₙ) : mkInter A (~ₙA) = pred ⊥ := by
+  by_cases h : A = pred ⊥ <;> simp [mkInter, h, tl]
+
+theorem mkInter_neg_left {B : EreNorm α} (tr : B ≠ (pred ⊤)★ₙ) :
+    mkInter (~ₙB) B = pred ⊥ := by
+  by_cases h : B = pred ⊥ <;> simp [mkInter, h, tr, ne_neg_neg B]
 
 theorem mkInter_eq_inter {A B : EreNorm α} (bl : A ≠ pred ⊥) (br : B ≠ pred ⊥)
-    (tl : A ≠ (pred ⊤)★ₙ) (tr : B ≠ (pred ⊤)★ₙ) : mkInter A B = (A ⋒ₙ B) := by
-  simp [mkInter, bl, br, tl, tr]
-
-/-! ### Well-formedness -/
-
-theorem wellFormed_mkCat {A B : EreNorm α} (ha : WellFormed A) (hb : WellFormed B) :
-    WellFormed (mkCat A B) := by
-  unfold mkCat
-  split_ifs <;> first | exact .pred ⊥ | assumption | exact .concatenation ha hb
+    (tl : A ≠ (pred ⊤)★ₙ) (tr : B ≠ (pred ⊤)★ₙ) (nl : B ≠ ~ₙA) (nr : A ≠ ~ₙB) :
+    mkInter A B = (A ⋒ₙ B) := by
+  simp [mkInter, bl, br, tl, tr, nl, nr]
 
 theorem wellFormed_mkInter {A B : EreNorm α} (ha : WellFormed A) (hb : WellFormed B) :
     WellFormed (mkInter A B) := by
@@ -105,6 +118,20 @@ theorem mkNeg_eq_neg {A : EreNorm α} (hb : A ≠ pred ⊥) (ht : A ≠ (pred �
 theorem wellFormed_mkNeg {A : EreNorm α} (ha : WellFormed A) : WellFormed (mkNeg A) := by
   unfold mkNeg
   split_ifs <;> first | exact .pred ⊥ | exact .star (.pred ⊤) | exact .negation ha
+
+theorem mkInter_mkNeg_right (A : EreNorm α) : mkInter A (mkNeg A) = pred ⊥ := by
+  by_cases hb : A = pred ⊥
+  · subst hb; simp
+  by_cases ht : A = (pred ⊤)★ₙ
+  · subst ht; simp
+  rw [mkNeg_eq_neg hb ht, mkInter_neg_right ht]
+
+theorem mkInter_mkNeg_left (A : EreNorm α) : mkInter (mkNeg A) A = pred ⊥ := by
+  by_cases hb : A = pred ⊥
+  · subst hb; simp
+  by_cases ht : A = (pred ⊤)★ₙ
+  · subst ht; simp
+  rw [mkNeg_eq_neg hb ht, mkInter_neg_left ht]
 
 end SmartNegation
 
