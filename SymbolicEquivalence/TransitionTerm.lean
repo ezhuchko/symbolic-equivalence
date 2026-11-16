@@ -254,12 +254,8 @@ theorem bindR_eq_restrict_bind (t : TTerm α β) (f : β → TTerm α γ) (ψ : 
 
 universe v
 
-/-- `liftBinaryR op l r` is `liftBinary op l r` without the branches no character reaches.
-
-    The binder `{β γ δ : Type v}` keeps all leaf types in one universe, as `liftBinary`
-    requires. The lemmas below relating the two no longer apply without this. -/
-def liftBinaryR {β γ δ : Type v} (op : β → γ → δ) (l : TTerm α β) (r : TTerm α γ) :
-    TTerm α δ :=
+/-- `liftBinaryR op l r` is `liftBinary op l r` without the branches no character reaches. -/
+def liftBinaryR (op : β → γ → δ) (l : TTerm α β) (r : TTerm α γ) : TTerm α δ :=
   l.bindR ⊤ fun x => liftUnary (op x) r
 
 private theorem liftBinaryR_eq (op : β → γ → δ) (l : TTerm α β) (r : TTerm α γ) :
@@ -267,7 +263,8 @@ private theorem liftBinaryR_eq (op : β → γ → δ) (l : TTerm α β) (r : TT
   bindR_eq_restrict_bind _ _ _
 
 /-- Pruning does not change the evaluation. -/
-theorem eval_liftBinaryR (op : β → γ → δ) (f : TTerm α β) (g : TTerm α γ) (x : σ) :
+theorem eval_liftBinaryR {β γ δ : Type v} (op : β → γ → δ) (f : TTerm α β) (g : TTerm α γ)
+    (x : σ) :
     (liftBinaryR op f g)[x] = op (f[x]) (g[x]) := by
   rw [liftBinaryR_eq, eval_restrict _ _ _ (by simp), eval_liftBinary]
 
