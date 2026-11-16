@@ -23,8 +23,8 @@ namespace EreNorm
 /-- Smart concatenation returns `⊥` if either operand is `⊥`, drops an `ε` operand, and
     concatenates otherwise. -/
 def mkCat (A B : EreNorm α) : EreNorm α :=
-  if A = pred ⊥ then pred ⊥
-  else if B = pred ⊥ then pred ⊥
+  if A.isBot then pred ⊥
+  else if B.isBot then pred ⊥
   else if A = ε then B
   else if B = ε then A
   else A ⬝ₙ B
@@ -57,10 +57,10 @@ variable [Top α]
 /-- Smart intersection returns `⊥` if either operand is `⊥` or the negation of the other, and
     intersects otherwise. -/
 def mkInter (A B : EreNorm α) : EreNorm α :=
-  if A = pred ⊥ then pred ⊥
-  else if B = pred ⊥ then pred ⊥
-  else if A = (pred ⊤)★ₙ then B
-  else if B = (pred ⊤)★ₙ then A
+  if A.isBot then pred ⊥
+  else if B.isBot then pred ⊥
+  else if A.isTopStar then B
+  else if B.isTopStar then A
   else if B = ~ₙA then pred ⊥
   else if A = ~ₙB then pred ⊥
   else A ⋒ₙ B
@@ -100,8 +100,8 @@ section SmartNegation
 
 /-- Smart negation returns `⊤*` for `⊥`, `⊥` for `⊤*` and negates otherwise. -/
 def mkNeg (A : EreNorm α) : EreNorm α :=
-  if A = (pred ⊤)★ₙ then pred ⊥
-  else if A = pred ⊥ then (pred ⊤)★ₙ
+  if A.isTopStar then pred ⊥
+  else if A.isBot then (pred ⊤)★ₙ
   else ~ₙ A
 
 @[simp] theorem mkNeg_bot : mkNeg (pred ⊥ : EreNorm α) = (pred ⊤)★ₙ := by

@@ -43,10 +43,10 @@ variable [Bot α] [Top α]
     nullability, derivatives and well-formedness (`lang_mkUnion`, `nullable_mkUnion`,
     `derivative_mkUnion`, `wellFormed_mkUnion`). -/
 def mkUnion (A B : EreNorm α) : EreNorm α :=
-  if A = pred ⊥ then B
-  else if B = pred ⊥ then A
-  else if A = (pred ⊤)★ₙ then A
-  else if B = (pred ⊤)★ₙ then B
+  if A.isBot then B
+  else if B.isBot then A
+  else if A.isTopStar then A
+  else if B.isTopStar then B
   else mkUnionOf A.first (A.rest ++ toList B)
 
 scoped infixr:65 " ⋓' " => mkUnion

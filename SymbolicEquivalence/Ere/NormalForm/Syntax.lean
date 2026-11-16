@@ -247,3 +247,27 @@ instance [BEq α] [LawfulBEq α] : LawfulBEq (EreNorm α) where
 
 /-- Decidable equality, from the lawful `BEq` above. -/
 instance [BEq α] [LawfulBEq α] : DecidableEq (EreNorm α) := instDecidableEqOfLawfulBEq
+
+/-! ### Cheap tests for `⊥` and `⊤*` -/
+
+namespace EreNorm
+variable [DecidableEq α]
+
+/-- Tests whether a normal form is `pred ⊥`, without building `pred ⊥`. -/
+def isBot [Bot α] : EreNorm α → Bool
+  | .pred φ => decide (φ = ⊥)
+  | _ => false
+
+/-- Tests whether a normal form is `(pred ⊤)★ₙ`, without building `(pred ⊤)★ₙ`. -/
+def isTopStar [Top α] : EreNorm α → Bool
+  | .star (.pred φ) => decide (φ = ⊤)
+  | _ => false
+
+@[simp] theorem isBot_iff [Bot α] {A : EreNorm α} : A.isBot = true ↔ A = pred ⊥ := by
+  cases A <;> simp [isBot]
+
+@[simp] theorem isTopStar_iff [Top α] {A : EreNorm α} :
+    A.isTopStar = true ↔ A = (pred ⊤)★ₙ := by
+  rcases A with _ | _ | _ | _ | _ | (_ | _ | _ | _ | _ | _ | _ | _) | _ | _ <;> simp [isTopStar]
+
+end EreNorm
